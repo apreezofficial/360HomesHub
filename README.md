@@ -28,6 +28,7 @@ Configure these constants in `config/config.php`:
 - `GOOGLE_CLIENT_ID`: Your Google Developer Console Client ID
 - `GOOGLE_CLIENT_SECRET`: Your Google Developer Console Client Secret
 - `GOOGLE_REDIRECT_URI`: OAuth callback URL
+- `RESEND_API_KEY`: Your Resend API Key
 
 ## API Documentation
 ### Base URL
@@ -35,8 +36,37 @@ Configure these constants in `config/config.php`:
 
 ### Endpoints
 
+#### GET /test
+A simple test endpoint to check API connectivity.
+**Response**:
+```json
+{
+  "message": "API GET request is working!"
+}
+```
+**Errors**:
+- 404: API endpoint not found
+
+#### POST /test
+A simple test endpoint for POST requests.
+**Request**:
+```json
+{
+  "key": "value"
+}
+```
+**Response**:
+```json
+{
+  "message": "API POST request is working!",
+  "data": {"key": "value"}
+}
+```
+**Errors**:
+- 404: API endpoint not found
+
 #### POST /auth/register
-Initiates the registration process by validating the email/phone and sending an OTP.
+Initiates the registration process by validating the email/phone and sending an OTP via Resend.
 **Request**:
 ```json
 {
@@ -53,6 +83,7 @@ Initiates the registration process by validating the email/phone and sending an 
 **Errors**:
 - 400: Email or phone already taken
 - 405: Invalid request method
+- 500: Failed to send OTP email
 
 #### POST /auth/verifyOtp
 Validates the 6-digit code sent to the user.
@@ -171,6 +202,7 @@ The API follows a strict sequential onboarding flow. Clients should first call t
 | MySQL | Database Engine | [mysql.com](https://www.mysql.com/) |
 | Firebase JWT | Token Authentication | [github.com/firebase/php-jwt](https://github.com/firebase/php-jwt) |
 | Google API Client | OAuth 2.0 Services | [github.com/google/google-api-php-client](https://github.com/google/google-api-php-client) |
+| Resend | Email API | [resend.com](https://resend.com/) |
 | Composer | Dependency Management | [getcomposer.org](https://getcomposer.org/) |
 
 ## Author Info

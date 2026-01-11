@@ -13,12 +13,17 @@ class ComposerStaticInit3871539446f6e0306a6de8d421df9d92
         '1f87db08236948d07391152dccb70f04' => __DIR__ . '/..' . '/google/apiclient-services/autoload.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
         'a8d3953fd9959404dd22d3dfcd0a79f0' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
+        '0754989a10baadda533479884b399278' => __DIR__ . '/..' . '/resend/resend-php/src/Resend.php',
     );
 
     public static $prefixLengthsPsr4 = array (
         'p' =>
         array (
             'phpseclib3\\' => 11,
+        ),
+        'R' =>
+        array (
+            'Resend\\' => 7,
         ),
         'P' =>
         array (
@@ -51,6 +56,10 @@ class ComposerStaticInit3871539446f6e0306a6de8d421df9d92
         'phpseclib3\\' =>
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
+        ),
+        'Resend\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/resend/resend-php/src',
         ),
         'Psr\\Log\\' =>
         array (
