@@ -21,6 +21,10 @@ class ComposerStaticInit3871539446f6e0306a6de8d421df9d92
         array (
             'phpseclib3\\' => 11,
         ),
+        'T' =>
+        array (
+            'Twilio\\' => 7,
+        ),
         'R' =>
         array (
             'Resend\\' => 7,
@@ -56,6 +60,10 @@ class ComposerStaticInit3871539446f6e0306a6de8d421df9d92
         'phpseclib3\\' =>
         array (
             0 => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib',
+        ),
+        'Twilio\\' =>
+        array (
+            0 => __DIR__ . '/..' . '/twilio/sdk/src/Twilio',
         ),
         'Resend\\' =>
         array (

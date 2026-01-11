@@ -1,23 +1,30 @@
 <?php
 require_once __DIR__ . '/ApiController.php';
+require_once __DIR__ . '/../../vendor/autoload.php'; // Correct path to autoload.php
 use \Firebase\JWT\JWT;
 use Resend\Resend;
 use Resend\Exceptions\Error;
+use Twilio\Rest\Client;
 
 class AuthController extends ApiController {
     private $userModel;
     private $otpModel;
     private $temporaryUserModel;
+    private $twilioClient;
 
     public function __construct() {
         $this->userModel = $this->model('User');
         $this->otpModel = $this->model('Otp');
         $this->temporaryUserModel = $this->model('TemporaryUser');
+        
+        // Initialize Twilio Client
+        $this->twilioClient = new Client(TWILIO_SID, TWILIO_TOKEN);
     }
 
     public function createPassword() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
 
             $data = [
                 'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
@@ -46,7 +53,8 @@ class AuthController extends ApiController {
 
     public function collectPersonalDetails() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
 
             $data = [
                 'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
@@ -78,7 +86,8 @@ class AuthController extends ApiController {
 
     public function collectAddress() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
 
             $data = [
                 'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
@@ -152,7 +161,8 @@ class AuthController extends ApiController {
 
     public function selectRole() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
 
             $data = [
                 'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
@@ -198,7 +208,8 @@ class AuthController extends ApiController {
     
     public function register() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
 
             $data = [
                 'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
@@ -308,6 +319,14 @@ class AuthController extends ApiController {
     }
 
     public function sendOtp($data) {
+        $contact = isset($data['email']) ? $data['email'] : $data['phone'];
+    
+        // Rate limiting check
+        $recentOtpCount = $this->otpModel->countRecentOtps($contact, OTP_RATE_LIMIT_MINUTES);
+        if ($recentOtpCount >= OTP_RATE_LIMIT_COUNT) {
+            $this->sendJsonResponse(['error' => 'Too many OTP requests. Please try again after ' . OTP_RATE_LIMIT_MINUTES . ' minutes.'], 429);
+        }
+
         // Generate a 6-digit OTP
         $otp = rand(100000, 999999);
     
@@ -332,8 +351,19 @@ class AuthController extends ApiController {
                 } catch (Error $e) {
                     $this->sendJsonResponse(['error' => 'Failed to send OTP email: ' . $e->getMessage()], 500);
                 }
+            } elseif (isset($data['phone'])) {
+                try {
+                    $this->twilioClient->messages->create(
+                        $data['phone'],
+                        [
+                            'from' => TWILIO_FROM,
+                            'body' => 'Your OTP for 360 Homeshub is: ' . $otp . '. It will expire in 10 minutes.'
+                        ]
+                    );
+                } catch (\Exception $e) {
+                    $this->sendJsonResponse(['error' => 'Failed to send OTP SMS: ' . $e->getMessage()], 500);
+                }
             }
-            // You can add SMS sending logic here if needed
     
             $this->sendJsonResponse(['message' => 'OTP sent successfully']);
         } else {
@@ -343,14 +373,19 @@ class AuthController extends ApiController {
 
     public function verifyOtp() {
         if ($_SERVER['REQUEST_METHOD'] == 'POST') {
-            $_POST = filter_input_array(INPUT_POST, FILTER_SANITIZE_STRING);
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
 
             $data = [
-                'email' => trim($_POST['email']),
-                'phone' => trim($_POST['phone']),
+                'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
+                'phone' => isset($_POST['phone']) ? trim($_POST['phone']) : null,
                 'otp' => trim($_POST['otp']),
                 'otp_err' => ''
             ];
+
+            if (empty($data['email']) && empty($data['phone'])) {
+                $this->sendJsonResponse(['error' => 'Either email or phone is required'], 400);
+            }
 
             if (empty($data['otp'])) {
                 $this->sendJsonResponse(['error' => 'OTP is required'], 400);
@@ -362,6 +397,93 @@ class AuthController extends ApiController {
             } else {
                 $this->sendJsonResponse(['error' => 'Invalid OTP'], 400);
             }
+        } else {
+            $this->sendJsonResponse(['error' => 'Invalid request method'], 405);
+        }
+    }
+
+    public function forgotPassword() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
+
+            $data = [
+                'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
+                'phone' => isset($_POST['phone']) ? trim($_POST['phone']) : null
+            ];
+
+            if (empty($data['email']) && empty($data['phone'])) {
+                $this->sendJsonResponse(['error' => 'Either email or phone is required'], 400);
+            }
+
+            $user = null;
+            if (!empty($data['email'])) {
+                $user = $this->userModel->findUserByEmail($data['email']);
+            } elseif (!empty($data['phone'])) {
+                $user = $this->userModel->findUserByPhone($data['phone']);
+            }
+
+            if (!$user) {
+                $this->sendJsonResponse(['error' => 'User not found'], 404);
+            }
+            
+            // Send OTP for password reset
+            $this->sendOtp($data);
+
+        } else {
+            $this->sendJsonResponse(['error' => 'Invalid request method'], 405);
+        }
+    }
+
+    public function resetPassword() {
+        if ($_SERVER['REQUEST_METHOD'] == 'POST') {
+            $input = json_decode(file_get_contents('php://input'), true);
+            $_POST = filter_var_array($input, FILTER_SANITIZE_STRING);
+
+            $data = [
+                'email' => isset($_POST['email']) ? trim($_POST['email']) : null,
+                'phone' => isset($_POST['phone']) ? trim($_POST['phone']) : null,
+                'otp' => trim($_POST['otp']),
+                'new_password' => trim($_POST['new_password'])
+            ];
+
+            if (empty($data['email']) && empty($data['phone'])) {
+                $this->sendJsonResponse(['error' => 'Either email or phone is required'], 400);
+            }
+            if (empty($data['otp'])) {
+                $this->sendJsonResponse(['error' => 'OTP is required'], 400);
+            }
+            if (empty($data['new_password'])) {
+                $this->sendJsonResponse(['error' => 'New password is required'], 400);
+            } elseif (strlen($data['new_password']) < 6) {
+                $this->sendJsonResponse(['error' => 'New password must be at least 6 characters'], 400);
+            }
+
+            // Find and verify OTP
+            if (!$this->otpModel->findOtp($data)) {
+                $this->sendJsonResponse(['error' => 'Invalid or expired OTP'], 400);
+            }
+
+            $user = null;
+            if (!empty($data['email'])) {
+                $user = $this->userModel->findUserByEmail($data['email']);
+            } elseif (!empty($data['phone'])) {
+                $user = $this->userModel->findUserByPhone($data['phone']);
+            }
+
+            if (!$user) {
+                $this->sendJsonResponse(['error' => 'User not found'], 404);
+            }
+
+            $hashedPassword = password_hash($data['new_password'], PASSWORD_DEFAULT);
+            if ($this->userModel->updatePassword($user->id, $hashedPassword)) {
+                // Delete the OTP after successful password reset
+                $this->otpModel->deleteOtp($this->otpModel->findOtp($data)->id);
+                $this->sendJsonResponse(['message' => 'Password reset successfully']);
+            } else {
+                $this->sendJsonResponse(['error' => 'Failed to reset password'], 500);
+            }
+
         } else {
             $this->sendJsonResponse(['error' => 'Invalid request method'], 405);
         }

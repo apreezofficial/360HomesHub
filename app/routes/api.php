@@ -22,7 +22,9 @@ $routes = [
         'api/test' => function() {
             $data = json_decode(file_get_contents('php://input'), true);
             sendJsonResponse(['message' => 'API POST request is working!', 'data' => $data]);
-        }
+        },
+        'api/auth/forgotpassword' => 'AuthController@forgotPassword',
+        'api/auth/resetpassword' => 'AuthController@resetPassword'
     ]
 ];
 

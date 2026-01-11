@@ -49,4 +49,14 @@ class Otp {
             return false;
         }
     }
+
+    public function countRecentOtps($contact, $minutes) {
+        $this->db->query('SELECT COUNT(*) as count FROM otps WHERE (email = :contact OR phone = :contact) AND created_at >= NOW() - INTERVAL :minutes MINUTE');
+        $this->db->bind(':contact', $contact);
+        $this->db->bind(':minutes', $minutes);
+
+        $row = $this->db->single();
+        return $row->count;
+    }
 }
+

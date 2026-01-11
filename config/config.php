@@ -23,3 +23,12 @@ define('GOOGLE_REDIRECT_URI', 'http://localhost/360-homeshub/api/auth/googleOaut
 
 // Resend API Key
 define('RESEND_API_KEY', 'your_resend_api_key');
+
+// Twilio Credentials
+define('TWILIO_SID', 'your_twilio_sid');
+define('TWILIO_TOKEN', 'your_twilio_token');
+define('TWILIO_FROM', 'your_twilio_from_number');
+
+// OTP Rate Limiting
+define('OTP_RATE_LIMIT_COUNT', 3);
+define('OTP_RATE_LIMIT_MINUTES', 10);
