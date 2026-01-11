@@ -1,6 +1,8 @@
 <?php
 require_once __DIR__ . '/ApiController.php';
 use \Firebase\JWT\JWT;
+use Resend\Resend;
+use Resend\Exceptions\Error;
 
 class AuthController extends ApiController {
     private $userModel;
@@ -308,19 +310,34 @@ class AuthController extends ApiController {
     public function sendOtp($data) {
         // Generate a 6-digit OTP
         $otp = rand(100000, 999999);
-
+    
         $otpData = [
             'email' => isset($data['email']) ? $data['email'] : null,
             'phone' => isset($data['phone']) ? $data['phone'] : null,
             'otp' => $otp,
             'expires_at' => date('Y-m-d H:i:s', strtotime('+10 minutes'))
         ];
-
+    
         if ($this->otpModel->createOtp($otpData)) {
-            // In a real application, you would send the email/SMS here
+            if (isset($data['email'])) {
+                $resend = Resend::client(RESEND_API_KEY);
+    
+                try {
+                    $resend->emails->send([
+                        'from' => 'onboarding@resend.dev',
+                        'to' => $data['email'],
+                        'subject' => 'Your OTP for 360 Homeshub',
+                        'html' => 'Your OTP is: <strong>' . $otp . '</strong>. It will expire in 10 minutes.'
+                    ]);
+                } catch (Error $e) {
+                    $this->sendJsonResponse(['error' => 'Failed to send OTP email: ' . $e->getMessage()], 500);
+                }
+            }
+            // You can add SMS sending logic here if needed
+    
             $this->sendJsonResponse(['message' => 'OTP sent successfully']);
         } else {
-            $this->sendJsonResponse(['error' => 'Failed to send OTP'], 500);
+            $this->sendJsonResponse(['error' => 'Failed to generate and save OTP'], 500);
         }
     }
 

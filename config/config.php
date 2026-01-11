@@ -20,3 +20,6 @@ define('JWT_SECRET', 'your_jwt_secret');
 define('GOOGLE_CLIENT_ID', 'your_google_client_id');
 define('GOOGLE_CLIENT_SECRET', 'your_google_client_secret');
 define('GOOGLE_REDIRECT_URI', 'http://localhost/360-homeshub/api/auth/googleOauth');
+
+// Resend API Key
+define('RESEND_API_KEY', 'your_resend_api_key');

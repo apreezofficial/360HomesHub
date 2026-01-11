@@ -1,19 +1,61 @@
 <?php
 // app/routes/api.php
 
-// This is where you will define your API routes.
-// You can use a simple routing mechanism or a more advanced one like FastRoute.
+header('Content-Type: application/json');
 
-// For now, let's just have a simple check.
-if (isset($_GET['url'])) {
-    $url = explode('/', filter_var(rtrim($_GET['url'], '/'), FILTER_SANITIZE_URL));
+// Simple router
+$method = $_SERVER['REQUEST_METHOD'];
+$url = isset($_GET['url']) ? rtrim($_GET['url'], '/') : '';
+$url = filter_var($url, FILTER_SANITIZE_URL);
+$url = explode('/', $url);
+$path = $url; // Keep the full path for more complex routing
+
+// Define routes
+$routes = [
+    'GET' => [
+        'api/test' => function() {
+            sendJsonResponse(['message' => 'API GET request is working!']);
+        },
+        'api/users' => 'ApiController@getAllUsers', // Example of controller usage
+    ],
+    'POST' => [
+        'api/test' => function() {
+            $data = json_decode(file_get_contents('php://input'), true);
+            sendJsonResponse(['message' => 'API POST request is working!', 'data' => $data]);
+        }
+    ]
+];
+
+// Match route
+$route_path = implode('/', array_slice($path, 0, 2));
+if (isset($routes[$method][$route_path])) {
+    $handler = $routes[$method][$route_path];
     
-    // Example route: /api/users
-    if ($url[0] == 'api' && $url[1] == 'users') {
-        // This is where you would call your UserController to get all users.
-        // For now, just return a simple JSON response.
-        header('Content-Type: application/json');
-        echo json_encode(['message' => 'API route for users works!']);
-        exit;
+    if (is_callable($handler)) {
+        $handler();
+    } else if (is_string($handler)) {
+        list($controller, $methodName) = explode('@', $handler);
+        $controllerFile = __DIR__ . '/../controllers/' . $controller . '.php';
+        if (file_exists($controllerFile)) {
+            require_once $controllerFile;
+            $controllerInstance = new $controller();
+            if (method_exists($controllerInstance, $methodName)) {
+                $controllerInstance->$methodName();
+            } else {
+                sendJsonResponse(['error' => "Method {$methodName} not found in controller {$controller}"], 500);
+            }
+        } else {
+            sendJsonResponse(['error' => "Controller {$controller} not found"], 500);
+        }
     }
+} else {
+    // Handle 404
+    sendJsonResponse(['error' => 'API endpoint not found'], 404);
+}
+
+// Helper function for JSON responses
+function sendJsonResponse($data, $statusCode = 200) {
+    http_response_code($statusCode);
+    echo json_encode($data);
+    exit;
 }

@@ -7,5 +7,11 @@ error_reporting(E_ALL);
 
 require_once __DIR__ . '/../app/bootstrap.php';
 
-// Init Api Core Library
-$init = new ApiCore();
+// Basic routing
+if (isset($_GET['url']) && strpos($_GET['url'], 'api') === 0) {
+    // Load API routes
+    $init = new ApiCore();
+} else {
+    // Load web routes
+    $init = new Core();
+}
