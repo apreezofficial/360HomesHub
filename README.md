@@ -14,8 +14,15 @@ A custom-built MVC PHP backend architecture designed for streamlined real estate
 ### Installation
 1. Clone the repository to your local server.
 2. Run `composer install` to pull dependencies.
-3. Import the database schema into your MySQL instance.
-4. Configure the virtual host to point to the project root.
+3. The database and tables will be created automatically if they don't exist.
+
+### Database Configuration
+The application is configured to work with a MySQL database by default. However, it also includes a failover mechanism. If the application cannot connect to the MySQL database, it will automatically create and use a file-based SQLite database located at `db/local.sqlite`.
+
+The database is also automatically seeded. When the application starts, it checks if the required tables exist. If they don't, it creates them based on the schema in `db/database.sql`.
+
+### Htaccess Setup
+The `.htaccess` file in the root of the project is responsible for all the routing. It redirects all requests to the `public` directory and then the `public/index.php` file handles the application's internal routing. This ensures that all requests are handled by the front controller and that no application files outside the `public` directory are directly accessible.
 
 ### Environment Variables
 Configure these constants in `config/config.php`:
@@ -200,6 +207,7 @@ The API follows a strict sequential onboarding flow. Clients should first call t
 | :--- | :--- | :--- |
 | PHP | Core Language | [php.net](https://www.php.net/) |
 | MySQL | Database Engine | [mysql.com](https://www.mysql.com/) |
+| SQLite | File-based Database | [sqlite.org](https://www.sqlite.org/) |
 | Firebase JWT | Token Authentication | [github.com/firebase/php-jwt](https://github.com/firebase/php-jwt) |
 | Google API Client | OAuth 2.0 Services | [github.com/google/google-api-php-client](https://github.com/google/google-api-php-client) |
 | Resend | Email API | [resend.com](https://resend.com/) |

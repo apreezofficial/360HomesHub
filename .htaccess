@@ -1,0 +1,16 @@
+<IfModule mod_rewrite.c>
+  RewriteEngine On
+  RewriteBase /360%20homeshub/public/
+
+  # Block access to sensitive files
+  RewriteRule ^(composer\.(json|lock)|README\.md|LICENSE)$ - [F]
+
+  # Redirect all requests to public directory
+  RewriteCond %{REQUEST_URI} !^/public/
+  RewriteRule ^(.*)$ public/$1 [L]
+
+  # Route requests to index.php
+  RewriteCond %{REQUEST_FILENAME} !-f
+  RewriteCond %{REQUEST_FILENAME} !-d
+  RewriteRule ^(.*)$ index.php?url=$1 [L,QSA]
+</IfModule>

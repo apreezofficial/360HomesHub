@@ -15,9 +15,10 @@
     private $dbh;
     private $stmt;
     private $error;
+    public $db_type;
 
     public function __construct(){
-      // Set DSN
+      // Set DSN for MySQL
       $dsn = 'mysql:host=' . $this->host . ';dbname=' . $this->dbname;
       $options = array(
         PDO::ATTR_PERSISTENT => true,
@@ -27,10 +28,22 @@
       // Create PDO instance
       try{
         $this->dbh = new PDO($dsn, $this->user, $this->pass, $options);
+        $this->db_type = 'mysql';
       } catch(PDOException $e){
-        $this->error = $e->getMessage();
-        echo $this->error;
+        // MySQL connection failed, try SQLite
+        try {
+          $this->dbh = new PDO('sqlite:' . APPROOT . '/../db/local.sqlite');
+          $this->dbh->setAttribute(PDO::ATTR_ERRMODE, PDO::ERRMODE_EXCEPTION);
+          $this->db_type = 'sqlite';
+        } catch (PDOException $e) {
+          $this->error = $e->getMessage();
+          echo $this->error;
+        }
       }
+    }
+
+    public function getDbType() {
+        return $this->db_type;
     }
 
     // Prepare statement with query
