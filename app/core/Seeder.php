@@ -21,10 +21,10 @@ class Seeder {
 
         if ($db_type === 'sqlite') {
             // Convert MySQL to SQLite syntax
-            $sql = str_replace('AUTO_INCREMENT', 'AUTOINCREMENT', $sql);
+            $sql = str_replace('`', '', $sql);
+            $sql = str_replace('int(11) NOT NULL AUTO_INCREMENT', 'INTEGER PRIMARY KEY AUTOINCREMENT', $sql);
+            $sql = str_replace('current_timestamp()', 'CURRENT_TIMESTAMP', $sql);
             $sql = str_replace('ENGINE=InnoDB DEFAULT CHARSET=utf8mb4', '', $sql);
-            $sql = preg_replace('/`temporary_users`/', 'temporary_users', $sql);
-            $sql = preg_replace('/`(\w+)`/', '$1', $sql);
         }
 
         try {
@@ -36,7 +36,7 @@ class Seeder {
                 $this->db->query($sql);
                 $this->db->execute();
             } catch (PDOException $e) {
-                die('Could not seed database: ' . $e->getMessage());
+                echo 'Could not seed database: ' . $e->getMessage();
             }
         }
     }
