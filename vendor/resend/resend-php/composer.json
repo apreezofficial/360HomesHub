@@ -21,10 +21,7 @@
     "autoload": {
         "psr-4": {
             "Resend\\": "src/"
-        },
-        "files": [
-            "src/Resend.php"
-        ]
+        }
     },
     "autoload-dev": {
         "psr-4": {
