@@ -3,8 +3,7 @@
 function send_email($to, $from, $subject, $html) {
     $api_key = getenv('RESEND_API_KEY');
     if (!$api_key) {
-        // Handle error: API key not found
-        return false;
+        return 'Resend API Error: API key not found in environment variables.';
     }
 
     $url = 'https://api.resend.com/emails';
@@ -28,13 +27,22 @@ function send_email($to, $from, $subject, $html) {
 
     $response = curl_exec($ch);
     $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+
+    if (curl_errno($ch)) {
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+        return 'Resend API cURL Error: ' . $curl_error;
+    }
     curl_close($ch);
 
     if ($http_code >= 200 && $http_code < 300) {
         return true;
     } else {
-        // Handle error: log the response
-        error_log('Resend API error: ' . $response);
-        return false;
+        $decoded_response = json_decode($response, true);
+        if (isset($decoded_response['message'])) {
+            return 'Resend API Error: ' . $decoded_response['message'];
+        } else {
+            return 'Resend API Error: ' . $response;
+        }
     }
 }

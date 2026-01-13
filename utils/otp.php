@@ -6,20 +6,12 @@ require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/response.php';
 require_once __DIR__ . '/email.php'; // New: Include our custom email sending function
 
-use Twilio\Rest\Client as TwilioClient;
-
 class OtpManager {
     private PDO $pdo;
-    private TwilioClient $twilio;
     // Removed: private Resend $resend;
 
     public function __construct() {
         $this->pdo = Database::getInstance();
-
-        // Initialize Twilio client
-        $sid = TWILIO_ACCOUNT_SID;
-        $token = TWILIO_AUTH_TOKEN;
-        $this->twilio = new TwilioClient($sid, $token);
 
         // Removed: Initialize Resend client
         // $this->resend = Resend::client(RESEND_API_KEY);
@@ -46,32 +38,62 @@ class OtpManager {
     }
 
     private function sendEmailOtp(string $email, string $code): bool {
-        try {
-            // Updated: Use custom send_email function
-            return send_email(
-                $email,
-                RESEND_FROM_EMAIL,
-                'Your OTP Code',
-                "Your One-Time Password (OTP) is: <strong>$code</strong>. It expires in " . OTP_EXPIRATION_MINUTES . " minutes."
-            );
-        } catch (Exception $e) {
-            error_log("Email OTP Error: " . $e->getMessage()); // Updated error message
+        // Updated: Use custom send_email function and handle its return
+        $send_result = send_email(
+            $email,
+            RESEND_FROM_EMAIL,
+            'Your OTP Code',
+            "Your One-Time Password (OTP) is: <strong>$code</strong>. It expires in " . OTP_EXPIRATION_MINUTES . " minutes."
+        );
+
+        if ($send_result === true) {
+            return true;
+        } else {
+            error_log("Email OTP Error: " . $send_result); // Log the detailed error message
             return false;
         }
     }
 
     private function sendSmsOtp(string $phone, string $code): bool {
-        try {
-            $this->twilio->messages->create(
-                $phone,
-                [
-                    'from' => TWILIO_PHONE_NUMBER,
-                    'body' => "Your One-Time Password (OTP) is: $code. It expires in " . OTP_EXPIRATION_MINUTES . " minutes."
-                ]
-            );
+        $sid = TWILIO_ACCOUNT_SID;
+        $token = TWILIO_AUTH_TOKEN;
+        $from_number = TWILIO_PHONE_NUMBER;
+        $body = urlencode("Your One-Time Password (OTP) is: $code. It expires in " . OTP_EXPIRATION_MINUTES . " minutes.");
+        $to_number = urlencode($phone);
+
+        $ch = curl_init();
+        $url = "https://api.twilio.com/2010-04-01/Accounts/{$sid}/Messages.json";
+        $post = "To={$to_number}&From={$from_number}&Body={$body}";
+
+        curl_setopt($ch, CURLOPT_URL, $url);
+        curl_setopt($ch, CURLOPT_POST, 1);
+        curl_setopt($ch, CURLOPT_POSTFIELDS, $post);
+        curl_setopt($ch, CURLOPT_USERPWD, "{$sid}:{$token}");
+        curl_setopt($ch, CURLOPT_RETURNTRANSFER, true);
+        curl_setopt($ch, CURLOPT_SSL_VERIFYPEER, false); // Consider setting to true in production with proper CA certs
+        curl_setopt($ch, CURLOPT_HEADER, false);
+
+        $response = curl_exec($ch);
+        $http_code = curl_getinfo($ch, CURLINFO_HTTP_CODE);
+        $curl_error = curl_error($ch);
+        curl_close($ch);
+
+        if ($response === false) {
+            error_log("cURL Error: " . $curl_error);
+            return false;
+        }
+
+        $response_data = json_decode($response, true);
+
+        if ($http_code >= 200 && $http_code < 300) {
+            // Check for Twilio API specific errors if any
+            if (isset($response_data['status']) && $response_data['status'] === 'failed') {
+                error_log("Twilio API Error: " . ($response_data['message'] ?? 'Unknown error') . " - Code: " . ($response_data['code'] ?? 'N/A'));
+                return false;
+            }
             return true;
-        } catch (Exception $e) {
-            error_log("Twilio SMS OTP Error: " . $e->getMessage());
+        } else {
+            error_log("Twilio SMS OTP HTTP Error: {$http_code} - Response: {$response}");
             return false;
         }
     }

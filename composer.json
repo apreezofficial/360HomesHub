@@ -9,6 +9,7 @@
     "autoload": {
         "files": [
             "config/env.php",
+            "config/logging.php",
             "utils/response.php",
             "utils/db.php",
             "utils/jwt.php",
