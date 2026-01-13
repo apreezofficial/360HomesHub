@@ -1,0 +1,19 @@
+{
+    "require": {
+        "php": ">=8.1",
+        "firebase/php-jwt": "^6.0",
+        "twilio/sdk": "^7.0",
+        "resend/resend-php": "^0.1.0",
+        "google/apiclient": "^2.12"
+    },
+    "autoload": {
+        "files": [
+            "config/env.php",
+            "api/utils/response.php",
+            "api/utils/db.php",
+            "api/utils/jwt.php",
+            "api/utils/otp.php",
+            "api/utils/upload.php"
+        ]
+    }
+}
