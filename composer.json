@@ -1,8 +1,0 @@
-{
-    "require": {
-        "firebase/php-jwt": "^6.3",
-        "google/apiclient": "^2.12.1",
-        "resend/resend-php": "^1.1",
-        "twilio/sdk": "^8.10"
-    }
-}
