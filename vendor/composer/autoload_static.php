@@ -13,7 +13,6 @@ class ComposerStaticInit46af212b63a79619f798921a529d2b9e
         '1f87db08236948d07391152dccb70f04' => __DIR__ . '/..' . '/google/apiclient-services/autoload.php',
         'decc78cc4436b1292c6c0d151b19445c' => __DIR__ . '/..' . '/phpseclib/phpseclib/phpseclib/bootstrap.php',
         'a8d3953fd9959404dd22d3dfcd0a79f0' => __DIR__ . '/..' . '/google/apiclient/src/aliases.php',
-        '0754989a10baadda533479884b399278' => __DIR__ . '/..' . '/resend/resend-php/src/Resend.php',
         'f8ba2370829fa4dfbab3cf973cb9426d' => __DIR__ . '/../..' . '/config/env.php',
         '25cdace21f6c1c28ec422b31cb87f120' => __DIR__ . '/../..' . '/utils/response.php',
         'baab4ae793cf1c109ce066f794a1eda8' => __DIR__ . '/../..' . '/utils/db.php',

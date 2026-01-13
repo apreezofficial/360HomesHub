@@ -4,14 +4,14 @@ require_once __DIR__ . '/../vendor/autoload.php';
 require_once __DIR__ . '/../config/env.php';
 require_once __DIR__ . '/db.php';
 require_once __DIR__ . '/response.php';
+require_once __DIR__ . '/email.php'; // New: Include our custom email sending function
 
 use Twilio\Rest\Client as TwilioClient;
-use Resend\Resend;
 
 class OtpManager {
     private PDO $pdo;
     private TwilioClient $twilio;
-    private Resend $resend;
+    // Removed: private Resend $resend;
 
     public function __construct() {
         $this->pdo = Database::getInstance();
@@ -21,8 +21,8 @@ class OtpManager {
         $token = TWILIO_AUTH_TOKEN;
         $this->twilio = new TwilioClient($sid, $token);
 
-        // Initialize Resend client
-        $this->resend = Resend::client(RESEND_API_KEY);
+        // Removed: Initialize Resend client
+        // $this->resend = Resend::client(RESEND_API_KEY);
     }
 
     private function generateOtpCode(): string {
@@ -47,15 +47,15 @@ class OtpManager {
 
     private function sendEmailOtp(string $email, string $code): bool {
         try {
-            $this->resend->emails->send([
-                'from' => RESEND_FROM_EMAIL,
-                'to' => $email,
-                'subject' => 'Your OTP Code',
-                'html' => "Your One-Time Password (OTP) is: <strong>$code</strong>. It expires in " . OTP_EXPIRATION_MINUTES . " minutes."
-            ]);
-            return true;
+            // Updated: Use custom send_email function
+            return send_email(
+                $email,
+                RESEND_FROM_EMAIL,
+                'Your OTP Code',
+                "Your One-Time Password (OTP) is: <strong>$code</strong>. It expires in " . OTP_EXPIRATION_MINUTES . " minutes."
+            );
         } catch (Exception $e) {
-            error_log("Resend Email OTP Error: " . $e->getMessage());
+            error_log("Email OTP Error: " . $e->getMessage()); // Updated error message
             return false;
         }
     }
