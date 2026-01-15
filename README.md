@@ -20,7 +20,7 @@ A high-performance real estate and property management backend built with PHP 8.
    composer install
    ```
 3. Configure your web server (Apache/Nginx) to point to the project root.
-4. Import the database schema into your MySQL instance.
+4. Import the database schema (`db/database.sql`) and seed data (`db/seed.sql`) into your MySQL instance.
 5. Create a logs directory and ensure it is writeable:
    ```bash
    mkdir public/logs && chmod 777 public/logs
@@ -33,7 +33,7 @@ Configure these constants within `config/env.php`:
 |----------|---------------|-------------|
 | `DB_HOST` | `localhost` | Database host address |
 | `DB_NAME` | `360homesub` | Name of the database |
-| `DB_USER` | `root` | Database username |
+| `DB_USER` | `root` | Database password |
 | `DB_PASS` | `password` | Database password |
 | `JWT_SECRET` | `your_random_string` | Secret key for token signing |
 | `TWILIO_ACCOUNT_SID` | `ACxxx...` | Twilio Account SID |
@@ -41,116 +41,103 @@ Configure these constants within `config/env.php`:
 | `RESEND_API_KEY` | `re_xxx...` | Resend API key for emails |
 | `GOOGLE_CLIENT_ID` | `xxx.apps.googleusercontent.com` | Google OAuth Client ID |
 
+---
+
 ## API Documentation
-### Base URL
-`http://yourdomain.com/api`
 
-### Endpoints
+### Authentication
+All authenticated endpoints require a JSON Web Token (JWT) to be passed in the `Authorization` header.
 
-#### POST /auth/register_email.php
-**Request**:
+**Format**: `Authorization: Bearer <your_jwt_token>`
+
+> **IMPORTANT**: The new Dashboard and Properties endpoints are location-aware. The frontend **MUST** provide the user's current `latitude` and `longitude` in the request body for these endpoints. The backend uses this to calculate distances and sort results in real-time. It does not use the user's saved profile location.
+
+---
+
+### Dashboard & Counts
+
+#### `GET /api/dashboard/home.php`
+Retrieves all necessary data for the main dashboard view, including a welcome message, unread counts, and a list of nearby properties.
+
+**Request Payload:**
 ```json
 {
-  "email": "user@example.com",
-  "password": "StrongPassword123"
+  "latitude": 40.7128,
+  "longitude": -74.0060
 }
 ```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Registration successful. OTP sent to your email for verification.",
-  "data": { "user_id": 1 }
-}
-```
-**Errors**:
-- 400: Invalid email or password format
-- 409: Email already registered
+- `latitude` (float, required): The user's current latitude.
+- `longitude` (float, required): The user's current longitude.
 
-#### POST /auth/verify_otp.php
-**Request**:
+**Success Response (200 OK):**
 ```json
 {
-  "user_id": 1,
-  "otp_code": "123456"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "OTP verified successfully.",
+  "status": "success",
   "data": {
-    "token": "eyJ0eXAi...",
-    "onboarding_step": "password"
-  }
-}
-```
-**Errors**:
-- 400: Invalid or expired OTP
-- 404: User not found
-
-#### POST /auth/google_auth.php
-**Request**:
-```json
-{
-  "id_token": "google_id_token_string"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Google authentication successful.",
-  "data": {
-    "token": "eyJ0eXAi...",
-    "onboarding_step": "profile",
-    "is_verified": false
+    "welcome_message": "Welcome back, John!",
+    "unread_notifications": 5,
+    "unread_messages": 3,
+    "property_categories": {
+      "apartment": 50,
+      "house": 30,
+      "studio": 20,
+      "duplex": 10,
+      "hotel": 5
+    },
+    "nearby_properties": [
+      {
+        "id": 15,
+        "name": "Cozy Studio Near Park",
+        "image": "http://example.com/uploads/studio_main.jpg",
+        "distance": 0.5,
+        "price": 120.00,
+        "price_type": "night",
+        "city": "New York",
+        "state": "NY"
+      }
+    ]
   }
 }
 ```
 
-#### POST /onboarding/set_profile.php
-**Request**:
-(Header: Authorization: Bearer {token})
-```json
-{
-  "first_name": "John",
-  "last_name": "Doe",
-  "bio": "Real estate enthusiast"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Profile updated successfully.",
-  "data": { "token": "new_token", "onboarding_step": "location" }
-}
-```
+#### `GET /api/messages/unread_count.php`
+Returns the count of unread messages for the authenticated user.
 
-#### POST /kyc/upload_documents.php
-**Request**:
-(Multipart/form-data)
-- `country`: "United States"
-- `identity_type`: "passport"
-- `id_front`: [File]
-- `id_back`: [File]
+**Request Payload:** None.
 
-**Response**:
+**Success Response (200 OK):**
 ```json
 {
-  "success": true,
-  "message": "Identity documents uploaded successfully.",
+  "status": "success",
   "data": {
-    "id_front_url": "/public/uploads/64f1...png",
-    "id_back_url": "/public/uploads/64f2...png"
+    "unread_count": 3
   }
 }
 ```
 
-#### POST /properties/list.php
-**Request**:
+#### `GET /api/notifications/unread_count.php`
+Returns the count of unread notifications for the authenticated user.
+
+**Request Payload:** None.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "unread_count": 5
+  }
+}
+```
+
+---
+
+### Properties
+
+#### `POST /api/properties/list.php`
+Fetches a paginated list of all available properties, sorted by the nearest distance to the user's current location.
+
+**Request Payload:**
 ```json
 {
   "latitude": 40.7128,
@@ -158,50 +145,155 @@ Configure these constants within `config/env.php`:
   "page": 1
 }
 ```
-**Response**:
+- `latitude` (float, required): The user's current latitude.
+- `longitude` (float, required): The user's current longitude.
+- `page` (integer, optional, default: 1): The page number for pagination.
+
+**Success Response (200 OK):**
 ```json
 {
-  "success": true,
+  "status": "success",
   "data": {
-    "pagination": { "current_page": 1, "total_pages": 5 },
+    "pagination": {
+      "current_page": 1,
+      "total_pages": 10,
+      "total_results": 100
+    },
     "properties": [
       {
-        "id": 10,
-        "name": "Luxury Suite",
-        "distance": 1.2,
-        "price": 250.00
+        "id": 15,
+        "name": "Cozy Studio Near Park",
+        "image": "http://example.com/uploads/studio_main.jpg",
+        "distance": 0.5,
+        "price": 120.00,
+        "price_type": "night",
+        "city": "New York",
+        "state": "NY"
       }
     ]
   }
 }
 ```
 
-#### GET /admin/kyc_list.php
-**Request**:
-(Header: Authorization: Bearer {admin_token})
-Query Param: `?status=pending`
+#### `POST /api/properties/view.php`
+Retrieves full details for a single property, including all its images, host information, and its distance from the user.
 
-**Response**:
+**Request Payload:**
 ```json
 {
-  "success": true,
+  "property_id": 12,
+  "latitude": 40.7128,
+  "longitude": -74.0060
+}
+```
+- `property_id` (integer, required): The ID of the property to view.
+- `latitude` (float, required): The user's current latitude.
+- `longitude` (float, required): The user's current longitude.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
   "data": {
-    "applications": [
+    "property": {
+      "id": 12,
+      "name": "Luxury Downtown Apartment",
+      "description": "A beautiful apartment in the heart of the city.",
+      "type": "apartment",
+      "price": 250.00,
+      "price_type": "night",
+      "bedrooms": 2,
+      "bathrooms": 2,
+      "area": 1200,
+      "booking_type": "instant",
+      "free_cancellation": true,
+      "amenities": ["wifi", "pool", "gym"],
+      "city": "New York",
+      "state": "NY",
+      "distance": 0.1,
+      "images": [
+        "http://example.com/uploads/image1.jpg",
+        "http://example.com/uploads/image2.jpg"
+      ],
+      "host": {
+        "id": 5,
+        "first_name": "John",
+        "last_name": "Doe",
+        "avatar": "http://example.com/avatars/johndoe.jpg"
+      }
+    }
+  }
+}
+```
+
+#### `POST /api/properties/search.php`
+Performs a powerful search for properties based on a combination of filters. All results are sorted by distance.
+
+**Request Payload:**
+> All filter fields are optional.
+
+```json
+{
+  "latitude": 40.7128,
+  "longitude": -74.0060,
+  "keyword": "beachfront",
+  "type": "apartment",
+  "price_min": 100,
+  "price_max": 500,
+  "bedrooms": 2,
+  "bathrooms": 1,
+  "booking_type": "instant",
+  "free_cancellation": true
+}
+```
+- `latitude`, `longitude` (float, required): User's current location.
+- `keyword` (string): Searches `name`, `city`, and `state` fields.
+- `type` (string): One of `apartment`, `house`, `studio`, `duplex`, `hotel`.
+- `price_min`, `price_max` (integer): Price range for filtering.
+- `bedrooms`, `bathrooms` (integer): Minimum number of bedrooms/bathrooms.
+- `booking_type` (string): `instant` or `request`.
+- `free_cancellation` (boolean): `true` to only show properties with free cancellation.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "data": {
+    "results_count": 1,
+    "applied_filters": {
+      "keyword": "beachfront",
+      "type": "apartment",
+      "price_min": 100,
+      "price_max": 500
+    },
+    "properties": [
       {
-        "id": 1,
-        "email": "user@example.com",
-        "status": "pending",
-        "submitted_at": "2023-10-01 12:00:00"
+        "id": 25,
+        "name": "Modern Beachfront Apartment",
+        "image": "http://example.com/uploads/beach_apt.jpg",
+        "distance": 15.3,
+        "price": 450.00,
+        "price_type": "night",
+        "city": "Miami",
+        "state": "FL"
       }
     ]
   }
 }
 ```
-**Errors**:
-- 403: Access denied. Admin privileges required.
 
-## Usage
-The API follows a strict onboarding sequence. After initial registration, users must verify their identity (OTP), set a password (if via email/phone), complete their profile details, and finally undergo KYC verification before being granted full access to host or book properties. All authenticated requests must include the JWT in the `Authorization` header as a `Bearer` token.
+---
+### Common Error Response
+
+If a request fails due to invalid input, authentication issues, or server errors, the API will return a standardized error response.
+
+**Example Error (400 Bad Request):**
+```json
+{
+  "status": "error",
+  "message": "Missing required fields: latitude, longitude."
+}
+```
 
 ## Technologies Used
 | Technology | Purpose | Link |
