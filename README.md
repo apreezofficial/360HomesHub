@@ -1,38 +1,29 @@
-# 360HomeHub API
+# 360HomeSub API
 
 ## Overview
-A high-performance backend infrastructure built with PHP 8.1+ providing secure user management, multi-step onboarding, and a rigorous KYC verification pipeline. This system leverages JWT for stateless authentication and integrates third-party services like Twilio, Resend, and Google OAuth for a seamless user experience.
+A high-performance real estate and property management backend built with PHP 8.1. It features a robust multi-step onboarding process, JWT-based authentication, and a complete KYC (Know Your Customer) verification pipeline for secure user interactions.
 
 ## Features
-- **Multi-Channel Authentication**: Support for Email, Phone, and Google OAuth 2.0.
-- **Security**: JWT-based session management and Bcrypt password hashing.
-- **Two-Factor Verification**: OTP delivery via Twilio (SMS) and Resend (Email).
-- **Onboarding Workflow**: Sequential data collection including profile, location, and role selection.
-- **KYC Engine**: Secure document upload handling (Identity cards and selfies) with an admin review interface.
-- **Admin Management**: Dedicated administrative endpoints to monitor, approve, or reject user verifications.
+- **JWT Authentication**: Secure stateless authentication using industry-standard JSON Web Tokens.
+- **Multi-Channel OTP**: Dual-factor verification support via Twilio (SMS) and Resend (Email).
+- **Social Auth**: Native integration with Google OAuth 2.0 for seamless user registration.
+- **Onboarding Workflow**: Managed state transitions for profiles, locations, avatars, and roles.
+- **KYC Pipeline**: Complete document management system including ID upload and selfie verification with an administrative review interface.
+- **Geospatial Logic**: Real-time distance calculations for property discovery based on user coordinates.
+- **Admin Dashboard**: Specialized endpoints for managing user verification and property oversight.
 
 ## Getting Started
 ### Installation
-1. **Clone the Repository**
-   ```bash
-   git clone https://github.com/apreezofficial/360HomesHub
-   cd 360HomesHub
-   ```
-
-2. **Install Dependencies**
+1. Clone the repository to your local server environment.
+2. Install dependencies via Composer:
    ```bash
    composer install
    ```
-
-3. **Database Configuration**
-   - Create a MySQL database named `360homesub`.
-   - Import your schema (tables for `users`, `otps`, and `kyc`).
-   - Configure the connection in `config/env.php`.
-
-4. **Directory Permissions**
-   Ensure the upload directory is writable:
+3. Configure your web server (Apache/Nginx) to point to the project root.
+4. Import the database schema into your MySQL instance.
+5. Create a logs directory and ensure it is writeable:
    ```bash
-   chmod -R 775 public/uploads
+   mkdir public/logs && chmod 777 public/logs
    ```
 
 ### Environment Variables
@@ -40,15 +31,15 @@ Configure these constants within `config/env.php`:
 
 | Variable | Example Value | Description |
 |----------|---------------|-------------|
-| `DB_HOST` | `localhost` | Database host |
-| `DB_NAME` | `360homesub` | Database name |
+| `DB_HOST` | `localhost` | Database host address |
+| `DB_NAME` | `360homesub` | Name of the database |
 | `DB_USER` | `root` | Database username |
-| `DB_PASS` | `your_password` | Database password |
-| `JWT_SECRET` | `shhh_secret_key` | Secret key for token signing |
+| `DB_PASS` | `password` | Database password |
+| `JWT_SECRET` | `your_random_string` | Secret key for token signing |
 | `TWILIO_ACCOUNT_SID` | `ACxxx...` | Twilio Account SID |
 | `TWILIO_AUTH_TOKEN` | `auth_xxx...` | Twilio Auth Token |
-| `RESEND_API_KEY` | `re_xxx...` | Resend API Key |
-| `GOOGLE_CLIENT_ID` | `google_id...` | Google OAuth Client ID |
+| `RESEND_API_KEY` | `re_xxx...` | Resend API key for emails |
+| `GOOGLE_CLIENT_ID` | `xxx.apps.googleusercontent.com` | Google OAuth Client ID |
 
 ## API Documentation
 ### Base URL
@@ -68,33 +59,13 @@ Configure these constants within `config/env.php`:
 ```json
 {
   "success": true,
-  "message": "Registration successful. OTP sent to your email.",
+  "message": "Registration successful. OTP sent to your email for verification.",
   "data": { "user_id": 1 }
 }
 ```
 **Errors**:
-- 400: Email and password required
+- 400: Invalid email or password format
 - 409: Email already registered
-
-#### POST /auth/register_phone.php
-**Request**:
-```json
-{
-  "phone": "+1234567890",
-  "password": "StrongPassword123"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Registration successful. OTP sent to phone.",
-  "data": { "user_id": 2 }
-}
-```
-**Errors**:
-- 400: Invalid phone format
-- 409: Phone already registered
 
 #### POST /auth/verify_otp.php
 **Request**:
@@ -109,11 +80,15 @@ Configure these constants within `config/env.php`:
 {
   "success": true,
   "message": "OTP verified successfully.",
-  "data": { "token": "jwt_token_string", "onboarding_step": "password" }
+  "data": {
+    "token": "eyJ0eXAi...",
+    "onboarding_step": "password"
+  }
 }
 ```
 **Errors**:
 - 400: Invalid or expired OTP
+- 404: User not found
 
 #### POST /auth/google_auth.php
 **Request**:
@@ -127,55 +102,22 @@ Configure these constants within `config/env.php`:
 {
   "success": true,
   "message": "Google authentication successful.",
-  "data": { "token": "jwt_token", "onboarding_step": "profile" }
-}
-```
-**Errors**:
-- 401: Invalid Google ID token
-
-#### POST /auth/login.php
-**Request**:
-```json
-{
-  "email": "user@example.com",
-  "password": "StrongPassword123"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Login successful.",
-  "data": { "token": "jwt_token", "is_verified": false }
-}
-```
-**Errors**:
-- 401: Invalid credentials
-- 403: OTP verification required
-
-#### POST /auth/set_password.php
-**Request** (Header: `Authorization: Bearer <token>`):
-```json
-{
-  "password": "NewSecurePassword123"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Password set successfully.",
-  "data": { "onboarding_step": "profile" }
+  "data": {
+    "token": "eyJ0eXAi...",
+    "onboarding_step": "profile",
+    "is_verified": false
+  }
 }
 ```
 
 #### POST /onboarding/set_profile.php
-**Request** (Header: `Authorization: Bearer <token>`):
+**Request**:
+(Header: Authorization: Bearer {token})
 ```json
 {
   "first_name": "John",
   "last_name": "Doe",
-  "bio": "Software Engineer"
+  "bio": "Real estate enthusiast"
 }
 ```
 **Response**:
@@ -183,185 +125,103 @@ Configure these constants within `config/env.php`:
 {
   "success": true,
   "message": "Profile updated successfully.",
-  "data": { "onboarding_step": "location" }
-}
-```
-
-#### POST /onboarding/set_location.php
-**Request**:
-```json
-{
-  "address": "123 Main St",
-  "city": "Lagos",
-  "state": "Lagos",
-  "country": "Nigeria"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Location updated.",
-  "data": { "onboarding_step": "avatar" }
-}
-```
-
-#### POST /onboarding/upload_avatar.php
-**Request** (Multipart/Form-Data):
-- `avatar`: [File Binary]
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Avatar uploaded.",
-  "data": { "avatar_url": "/public/uploads/unique_id.png" }
-}
-```
-
-#### POST /onboarding/set_role.php
-**Request**:
-```json
-{
-  "role": "host"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Role selected.",
-  "data": { "onboarding_step": "kyc" }
-}
-```
-
-#### GET /kyc/kyc_status.php
-**Response**:
-```json
-{
-  "success": true,
-  "data": { "kyc": { "status": "pending", "submitted_at": "..." } }
-}
-```
-
-#### POST /kyc/start_kyc.php
-**Request**:
-```json
-{
-  "country": "Nigeria",
-  "identity_type": "national_id"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "KYC initiated."
+  "data": { "token": "new_token", "onboarding_step": "location" }
 }
 ```
 
 #### POST /kyc/upload_documents.php
-**Request** (Multipart/Form-Data):
+**Request**:
+(Multipart/form-data)
+- `country`: "United States"
+- `identity_type`: "passport"
 - `id_front`: [File]
 - `id_back`: [File]
-- `country`: "Nigeria"
-- `identity_type`: "passport"
 
 **Response**:
 ```json
 {
   "success": true,
-  "message": "Documents uploaded."
+  "message": "Identity documents uploaded successfully.",
+  "data": {
+    "id_front_url": "/public/uploads/64f1...png",
+    "id_back_url": "/public/uploads/64f2...png"
+  }
 }
 ```
 
-#### POST /kyc/upload_selfie.php
-**Request** (Multipart/Form-Data):
-- `selfie`: [File]
-
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Selfie uploaded and KYC submitted."
-}
-```
-
-#### POST /admin/login.php
+#### POST /properties/list.php
 **Request**:
 ```json
 {
-  "email": "admin@360home.com",
-  "password": "AdminPassword"
+  "latitude": 40.7128,
+  "longitude": -74.0060,
+  "page": 1
 }
 ```
 **Response**:
 ```json
 {
   "success": true,
-  "data": { "token": "admin_jwt_token", "role": "admin" }
+  "data": {
+    "pagination": { "current_page": 1, "total_pages": 5 },
+    "properties": [
+      {
+        "id": 10,
+        "name": "Luxury Suite",
+        "distance": 1.2,
+        "price": 250.00
+      }
+    ]
+  }
 }
 ```
 
 #### GET /admin/kyc_list.php
-**Query Params**: `status` (optional: pending, approved, rejected)
-**Response**:
-```json
-{
-  "success": true,
-  "data": { "applications": [...] }
-}
-```
-
-#### POST /admin/approve_kyc.php
 **Request**:
-```json
-{
-  "kyc_id": 10
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "KYC application approved."
-}
-```
+(Header: Authorization: Bearer {admin_token})
+Query Param: `?status=pending`
 
-#### POST /admin/reject_kyc.php
-**Request**:
-```json
-{
-  "kyc_id": 10,
-  "admin_note": "ID card is blurred"
-}
-```
 **Response**:
 ```json
 {
   "success": true,
-  "message": "KYC application rejected."
+  "data": {
+    "applications": [
+      {
+        "id": 1,
+        "email": "user@example.com",
+        "status": "pending",
+        "submitted_at": "2023-10-01 12:00:00"
+      }
+    ]
+  }
 }
 ```
+**Errors**:
+- 403: Access denied. Admin privileges required.
+
+## Usage
+The API follows a strict onboarding sequence. After initial registration, users must verify their identity (OTP), set a password (if via email/phone), complete their profile details, and finally undergo KYC verification before being granted full access to host or book properties. All authenticated requests must include the JWT in the `Authorization` header as a `Bearer` token.
 
 ## Technologies Used
-| Technology | Purpose |
-|------------|---------|
-| [PHP 8.1+](https://php.net) | Core Logic |
-| [Firebase JWT](https://github.com/firebase/php-jwt) | Authentication |
-| [Twilio SDK](https://www.twilio.com) | SMS OTP |
-| [Resend](https://resend.com) | Email OTP |
-| [Google API Client](https://github.com/googleapis/google-api-php-client) | Social Auth |
-| [MySQL](https://mysql.com) | Database Management |
+| Technology | Purpose | Link |
+|------------|---------|------|
+| PHP 8.1 | Core Language | [php.net](https://www.php.net/) |
+| MySQL | Database | [mysql.com](https://www.mysql.com/) |
+| Firebase JWT | Authentication | [github.com](https://github.com/firebase/php-jwt) |
+| Twilio | SMS OTP | [twilio.com](https://www.twilio.com/) |
+| Resend | Email Services | [resend.com](https://resend.com/) |
+| Google Client | Social Auth | [cloud.google.com](https://cloud.google.com/) |
 
-## Author
-**[Your Name]**
-- GitHub: [apreezofficial](https://github.com/apreezofficial)
-- LinkedIn: [Your Profile]
-- Twitter: [Your Handle]
+## Author Info
+**Project Lead**
+- GitHub: [github.com/yourusername]
+- LinkedIn: [linkedin.com/in/yourusername]
+- Website: [yourportfolio.com]
 
 ![PHP](https://img.shields.io/badge/PHP-777BB4?style=for-the-badge&logo=php&logoColor=white)
 ![MySQL](https://img.shields.io/badge/MySQL-00000F?style=for-the-badge&logo=mysql&logoColor=white)
 ![JWT](https://img.shields.io/badge/JWT-black?style=for-the-badge&logo=JSON%20web%20tokens)
+![Twilio](https://img.shields.io/badge/Twilio-F22F46?style=for-the-badge&logo=Twilio&logoColor=white)
 
 [![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://www.npmjs.com/package/dokugen)
