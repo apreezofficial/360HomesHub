@@ -40,15 +40,9 @@ try {
     $currentOnboardingStep = $user['onboarding_step'];
     $newOnboardingStep = $currentOnboardingStep; // Default to current
 
-    // Determine next onboarding step based on auth provider and current step
-    if ($user['auth_provider'] === 'email' || $user['auth_provider'] === 'phone') {
-        if ($currentOnboardingStep === 'otp') {
-            $newOnboardingStep = 'password';
-        }
-    } elseif ($user['auth_provider'] === 'google') {
-        if ($currentOnboardingStep === 'otp' || $currentOnboardingStep === 'password') { // For Google, password might be set in google_auth.php
-            $newOnboardingStep = 'profile'; // Directly to profile after Google login/password set
-        }
+    // Determine next onboarding step
+    if (($user['auth_provider'] === 'email' || $user['auth_provider'] === 'phone') && $currentOnboardingStep === 'otp') {
+        $newOnboardingStep = 'profile'; // After OTP, user should complete their profile
     }
 
     // Update onboarding step if changed

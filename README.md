@@ -54,6 +54,363 @@ All authenticated endpoints require a JSON Web Token (JWT) to be passed in the `
 
 ---
 
+### Auth
+
+#### `POST /api/auth/register_email.php`
+Registers a new user with their email and password. Sends an OTP to the provided email for verification.
+
+**Request Payload:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+- `email` (string, required): The user's email address.
+- `password` (string, required): The user's password (min 8 characters).
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Registration successful. OTP sent to your email for verification.",
+  "data": {
+    "user_id": 123
+  }
+}
+```
+
+#### `POST /api/auth/register_phone.php`
+Registers a new user with their phone number and password. Sends an OTP to the provided phone number for verification.
+
+**Request Payload:**
+```json
+{
+  "phone": "+1234567890",
+  "password": "password123"
+}
+```
+- `phone` (string, required): The user's phone number in E.164 format.
+- `password` (string, required): The user's password (min 8 characters).
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Registration successful. OTP sent to your phone for verification.",
+  "data": {
+    "user_id": 123
+  }
+}
+```
+
+#### `POST /api/auth/verify_otp.php`
+Verifies the OTP sent to the user's email or phone. Returns a JWT to be used for subsequent authenticated requests.
+
+**Request Payload:**
+```json
+{
+  "user_id": 123,
+  "otp_code": "123456"
+}
+```
+- `user_id` (integer, required): The ID of the user being verified.
+- `otp_code` (string, required): The OTP code sent to the user.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "OTP verified successfully.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "profile"
+  }
+}
+```
+
+#### `POST /api/auth/login.php`
+Logs in a user with their email/phone and password. Returns a JWT.
+
+**Request Payload:**
+```json
+{
+  "email": "user@example.com",
+  "password": "password123"
+}
+```
+or
+```json
+{
+  "phone": "+1234567890",
+  "password": "password123"
+}
+```
+- `email` or `phone` (string, required): The user's email or phone.
+- `password` (string, required): The user's password.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Login successful.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "completed",
+    "is_verified": true,
+    "role": "guest"
+  }
+}
+```
+
+#### `POST /api/auth/google_auth.php`
+Authenticates a user with a Google ID token. Creates a new user if one doesn't exist. Returns a JWT.
+
+**Request Payload:**
+```json
+{
+  "id_token": "ey..."
+}
+```
+- `id_token` (string, required): The Google ID token obtained from the frontend.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Google authentication successful.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "password",
+    "is_verified": false,
+    "role": null
+  }
+}
+```
+
+#### `POST /api/auth/set_password.php`
+Allows a user to set or change their password. This is required for users who registered via Google.
+
+**Request Payload:**
+```json
+{
+  "password": "new_password123"
+}
+```
+- `password` (string, required): The new password (min 8 characters).
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Password set successfully. Please complete your profile.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "profile"
+  }
+}
+```
+
+---
+
+### Onboarding
+
+The onboarding process is a multi-step workflow. Each step, when completed successfully, returns a new JWT that includes the next `onboarding_step` in its payload.
+
+#### `POST /api/onboarding/set_profile.php`
+Sets the user's first name, last name, and bio.
+
+**Request Payload:**
+```json
+{
+  "first_name": "John",
+  "last_name": "Doe",
+  "bio": "Software developer from New York."
+}
+```
+- `first_name`, `last_name` (string, required): The user's name.
+- `bio` (string, optional): A short biography.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Profile updated successfully. Please set your location.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "location"
+  }
+}
+```
+
+#### `POST /api/onboarding/set_location.php`
+Sets the user's geographical location.
+
+**Request Payload:**
+```json
+{
+  "address": "123 Main St",
+  "city": "New York",
+  "state": "NY",
+  "country": "USA"
+}
+```
+- `address`, `city`, `state`, `country` (string, required): The user's location details.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Location updated successfully. Please upload your avatar.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "avatar"
+  }
+}
+```
+
+#### `POST /api/onboarding/upload_avatar.php`
+Uploads a user's avatar. The request must be `multipart/form-data`.
+
+**Request Payload:**
+- `avatar`: The avatar image file.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Avatar uploaded successfully. Please select your role.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "role",
+    "avatar_url": "/public/uploads/..."
+  }
+}
+```
+
+#### `POST /api/onboarding/set_role.php`
+Sets the user's role as either a `guest` or a `host`.
+
+**Request Payload:**
+```json
+{
+  "role": "guest"
+}
+```
+- `role` (string, required): Must be `guest` or `host`.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Role selected successfully. Please proceed to KYC verification.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "kyc",
+    "role": "guest"
+  }
+}
+```
+
+---
+
+### KYC (Know Your Customer)
+
+The KYC process is the final step of user verification.
+
+#### `GET /api/kyc/kyc_status.php`
+Retrieves the current status of the user's KYC application.
+
+**Request Payload:** None.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "KYC application status retrieved successfully.",
+  "data": {
+    "kyc": {
+      "id": 1,
+      "country": "USA",
+      "identity_type": "passport",
+      "status": "pending",
+      "admin_note": null,
+      "submitted_at": "2026-01-18 12:00:00",
+      "id_front_url": "/public/uploads/...",
+      "id_back_url": "/public/uploads/...",
+      "selfie_url": "/public/uploads/..."
+    }
+  }
+}
+```
+
+#### `POST /api/kyc/start_kyc.php`
+Initiates the KYC process by specifying the country and identity document type.
+
+**Request Payload:**
+```json
+{
+  "country": "USA",
+  "identity_type": "passport"
+}
+```
+- `country` (string, required): The user's country.
+- `identity_type` (string, required): One of `passport`, `national_id`, `drivers_license`.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "KYC initiated. Please proceed to upload your identity documents.",
+  "data": {
+    "country": "USA",
+    "identity_type": "passport"
+  }
+}
+```
+
+#### `POST /api/kyc/upload_documents.php`
+Uploads the front and back of the user's identity document. The request must be `multipart/form-data`.
+
+**Request Payload:**
+- `id_front`: The image file of the front of the ID.
+- `id_back`: The image file of the back of the ID.
+- `country` (string, required): The user's country.
+- `identity_type` (string, required): The type of ID.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Identity documents uploaded successfully. Please proceed to upload your selfie.",
+  "data": {
+    "id_front_url": "/public/uploads/...",
+    "id_back_url": "/public/uploads/..."
+  }
+}
+```
+
+#### `POST /api/kyc/upload_selfie.php`
+Uploads a selfie of the user for verification and completes the user's onboarding. The request must be `multipart/form-data`.
+
+**Request Payload:**
+- `selfie`: The selfie image file.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Selfie uploaded and KYC application submitted for review. You will be notified of the status.",
+  "data": {
+    "token": "ey...",
+    "onboarding_step": "completed",
+    "selfie_url": "/public/uploads/..."
+  }
+}
+```
+
+---
+
 ### Dashboard & Counts
 
 #### `GET /api/dashboard/home.php`
@@ -283,6 +640,110 @@ Performs a powerful search for properties based on a combination of filters. All
 ```
 
 ---
+### Admin
+
+Admin endpoints require an admin-level JWT.
+
+#### `POST /api/admin/login.php`
+Logs in an admin user.
+
+**Request Payload:**
+```json
+{
+  "email": "admin@example.com",
+  "password": "adminpassword"
+}
+```
+- `email` (string, required): The admin's email.
+- `password` (string, required): The admin's password.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "Admin login successful.",
+  "data": {
+    "token": "ey...",
+    "role": "admin"
+  }
+}
+```
+
+#### `GET /api/admin/kyc_list.php`
+Retrieves a list of all KYC applications. Can be filtered by status.
+
+**Query Parameters:**
+- `status` (string, optional): Filter by `pending`, `approved`, or `rejected`.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "KYC applications retrieved successfully.",
+  "data": {
+    "applications": [
+      {
+        "id": 1,
+        "user_id": 123,
+        "email": "user@example.com",
+        "status": "pending",
+        ...
+      }
+    ]
+  }
+}
+```
+
+#### `POST /api/admin/approve_kyc.php`
+Approves a user's KYC application.
+
+**Request Payload:**
+```json
+{
+  "kyc_id": 1
+}
+```
+- `kyc_id` (integer, required): The ID of the KYC application to approve.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "KYC application approved and user verified.",
+  "data": {
+    "kyc_id": 1,
+    "user_id": 123
+  }
+}
+```
+
+#### `POST /api/admin/reject_kyc.php`
+Rejects a user's KYC application.
+
+**Request Payload:**
+```json
+{
+  "kyc_id": 1,
+  "admin_note": "ID photo is blurry."
+}
+```
+- `kyc_id` (integer, required): The ID of the KYC application to reject.
+- `admin_note` (string, optional): A reason for the rejection.
+
+**Success Response (200 OK):**
+```json
+{
+  "status": "success",
+  "message": "KYC application rejected.",
+  "data": {
+    "kyc_id": 1,
+    "admin_note": "ID photo is blurry."
+  }
+}
+```
+
+---
+
 ### Common Error Response
 
 If a request fails due to invalid input, authentication issues, or server errors, the API will return a standardized error response.

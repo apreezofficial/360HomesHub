@@ -1,48 +1,35 @@
 <?php
-// /api/messages/unread_count.php
 
-// --- Example Request ---
-// No body required, uses JWT for authentication.
-// --- Example Response ---
-// {
-//   "status": "success",
-//   "unread_count": 5
-// }
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/env.php';
+require_once __DIR__ . '/../../utils/db.php';
+require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/jwt.php';
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'GET') {
+    send_error('Invalid request method.', [], 405);
+}
 
-require_once '../../vendor/autoload.php';
-require_once '../../utils/db.php';
-require_once '../../utils/jwt.php';
-require_once '../../utils/response.php';
+// Authenticate user via JWT
+$userData = JWTManager::authenticate();
+$userId = $userData['user_id'] ?? null;
+
+if (!$userId) {
+    send_error('Authentication failed.', [], 401);
+}
 
 try {
-    // Authenticate user
-    $jwt = get_jwt_from_header();
-    if (!$jwt) {
-        send_response('error', 'Authentication token not provided.');
-    }
-
-    $decoded = validate_jwt($jwt);
-    if (!$decoded) {
-        send_response('error', 'Invalid or expired token.');
-    }
-    $user_id = $decoded->data->user_id;
-
-    // Get DB connection
-    $pdo = get_db_connection();
+    $pdo = Database::getInstance();
 
     // Query for unread messages count
     $stmt = $pdo->prepare("SELECT COUNT(*) as unread_count FROM messages WHERE receiver_id = ? AND is_read = 0");
-    $stmt->execute([$user_id]);
+    $stmt->execute([$userId]);
     $result = $stmt->fetch(PDO::FETCH_ASSOC);
 
     $unread_count = $result ? (int) $result['unread_count'] : 0;
 
-    send_response('success', null, ['unread_count' => $unread_count]);
+    send_success('Unread message count retrieved successfully.', ['unread_count' => $unread_count]);
 
 } catch (Exception $e) {
-    send_response('error', $e->getMessage());
+    send_error('An error occurred while fetching unread message count: ' . $e->getMessage(), [], 500);
 }
-
-?>

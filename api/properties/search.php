@@ -1,71 +1,35 @@
 <?php
-// /api/properties/search.php
 
-// --- Example Request ---
-// {
-//   "latitude": 40.7128,
-//   "longitude": -74.0060,
-//   "keyword": "apartment",
-//   "type": "apartment",
-//   "price_min": 100,
-//   "price_max": 500,
-//   "bedrooms": 2,
-//   "bathrooms": 1,
-//   "booking_type": "instant",
-//   "free_cancellation": true
-// }
-// --- Example Response ---
-// {
-//   "status": "success",
-//   "results_count": 1,
-//   "applied_filters": {
-//     "keyword": "apartment",
-//     "type": "apartment",
-//     "price_min": 100,
-//     "price_max": 500,
-//     "bedrooms": 2,
-//     "bathrooms": 1,
-//     "booking_type": "instant",
-//     "free_cancellation": true
-//   },
-//   "properties": [
-//     {
-//       "id": 12,
-//       "name": "Luxury Downtown Apartment",
-//       "image": "http://example.com/uploads/image1.jpg",
-//       "distance": 0.1,
-//       "price": 250,
-//       "price_type": "night",
-//       "city": "New York",
-//       "state": "NY"
-//     }
-//   ]
-// }
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/env.php';
+require_once __DIR__ . '/../../utils/db.php';
+require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/jwt.php';
+require_once __DIR__ . '/../../utils/geo.php';
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    send_error('Invalid request method.', [], 405);
+}
 
-require_once '../../vendor/autoload.php';
-require_once '../../utils/db.php';
-require_once '../../utils/jwt.php';
-require_once '../../utils/geo.php';
-require_once '../../utils/response.php';
+// Authenticate user via JWT
+$userData = JWTManager::authenticate();
+$userId = $userData['user_id'] ?? null;
+
+if (!$userId) {
+    send_error('Authentication failed.', [], 401);
+}
+
+// Get input data
+$data = json_decode(file_get_contents('php://input'), true);
+$user_lat = $data['latitude'] ?? null;
+$user_lon = $data['longitude'] ?? null;
+
+if ($user_lat === null || $user_lon === null) {
+    send_error('Missing required fields: latitude, longitude.', [], 400);
+}
 
 try {
-    $jwt = get_jwt_from_header();
-    if (!$jwt) send_response('error', 'Authentication token not provided.');
-
-    $decoded = validate_jwt($jwt);
-    if (!$decoded) send_response('error', 'Invalid or expired token.');
-
-    $data = json_decode(file_get_contents('php://input'), true);
-    $user_lat = $data['latitude'] ?? null;
-    $user_lon = $data['longitude'] ?? null;
-
-    if ($user_lat === null || $user_lon === null) {
-        send_response('error', 'Missing required fields: latitude, longitude.');
-    }
-
-    $pdo = get_db_connection();
+    $pdo = Database::getInstance();
 
     $sql = "SELECT p.*, pi.image_url FROM properties p
             LEFT JOIN (
@@ -156,13 +120,12 @@ try {
         ];
     }
 
-    send_response('success', null, [
+    send_success('Search results retrieved successfully.', [
         'results_count' => count($response_properties),
         'applied_filters' => $applied_filters,
         'properties' => $response_properties
     ]);
 
 } catch (Exception $e) {
-    send_response('error', $e->getMessage());
+    send_error('An error occurred during search: ' . $e->getMessage(), [], 500);
 }
-?>

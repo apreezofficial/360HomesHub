@@ -1,82 +1,50 @@
 <?php
-// /api/dashboard/home.php
 
-// --- Example Request ---
-// {
-//   "latitude": 40.7128,
-//   "longitude": -74.0060
-// }
-// --- Example Response ---
-// {
-//   "status": "success",
-//   "data": {
-//     "welcome_message": "Welcome back, John!",
-//     "unread_notifications": 12,
-//     "unread_messages": 5,
-//     "property_categories": {
-//       "apartment": 50,
-//       "house": 30,
-//       "studio": 20,
-//       "duplex": 10,
-//       "hotel": 5
-//     },
-//     "nearby_properties": [
-//       {
-//         "id": 15,
-//         "name": "Cozy Studio Near Park",
-//         "image": "http://example.com/uploads/studio_main.jpg",
-//         "distance": 0.5,
-//         "price": 120,
-//         "price_type": "night",
-//         "city": "New York",
-//         "state": "NY"
-//       }
-//     ]
-//   }
-// }
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/env.php';
+require_once __DIR__ . '/../../utils/db.php';
+require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/jwt.php';
+require_once __DIR__ . '/../../utils/geo.php';
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    send_error('Invalid request method.', [], 405);
+}
 
-require_once '../../vendor/autoload.php';
-require_once '../../utils/db.php';
-require_once '../../utils/jwt.php';
-require_once '../../utils/geo.php';
-require_once '../../utils/response.php';
+// Authenticate user via JWT
+$userData = JWTManager::authenticate();
+$userId = $userData['user_id'] ?? null;
+
+if (!$userId) {
+    send_error('Authentication failed.', [], 401);
+}
+
+// Get input data
+$data = json_decode(file_get_contents('php://input'), true);
+$user_lat = $data['latitude'] ?? null;
+$user_lon = $data['longitude'] ?? null;
+
+if ($user_lat === null || $user_lon === null) {
+    send_error('Missing required fields: latitude, longitude.', [], 400);
+}
 
 try {
-    // Authenticate user
-    $jwt = get_jwt_from_header();
-    if (!$jwt) send_response('error', 'Authentication token not provided.');
-
-    $decoded = validate_jwt($jwt);
-    if (!$decoded) send_response('error', 'Invalid or expired token.');
-    $user_id = $decoded->data->user_id;
-
-    // Get input data
-    $data = json_decode(file_get_contents('php://input'), true);
-    $user_lat = $data['latitude'] ?? null;
-    $user_lon = $data['longitude'] ?? null;
-
-    if ($user_lat === null || $user_lon === null) {
-        send_response('error', 'Missing required fields: latitude, longitude.');
-    }
-
-    $pdo = get_db_connection();
+    $pdo = Database::getInstance();
 
     // 1. Welcome Message
     $user_stmt = $pdo->prepare("SELECT first_name FROM users WHERE id = ?");
-    $user_stmt->execute([$user_id]);
+    $user_stmt->execute([$userId]);
     $user = $user_stmt->fetch(PDO::FETCH_ASSOC);
     $welcome_message = "Welcome back, " . ($user ? $user['first_name'] : 'Guest') . "!";
 
     // 2. Unread Notifications Count
     $notif_stmt = $pdo->prepare("SELECT COUNT(*) FROM notifications WHERE user_id = ? AND is_read = 0");
-    $notif_stmt->execute([$user_id]);
+    $notif_stmt->execute([$userId]);
     $unread_notifications = (int) $notif_stmt->fetchColumn();
 
     // 3. Unread Messages Count
     $msg_stmt = $pdo->prepare("SELECT COUNT(*) FROM messages WHERE receiver_id = ? AND is_read = 0");
-    $msg_stmt->execute([$user_id]);
+    $msg_stmt->execute([$userId]);
     $unread_messages = (int) $msg_stmt->fetchColumn();
 
     // 4. Property Category Counts
@@ -132,9 +100,8 @@ try {
         'nearby_properties' => $response_properties,
     ];
 
-    send_response('success', null, ['data' => $dashboard_data]);
+    send_success('Dashboard data retrieved successfully.', $dashboard_data);
 
 } catch (Exception $e) {
-    send_response('error', $e->getMessage());
+    send_error('An error occurred while fetching dashboard data: ' . $e->getMessage(), [], 500);
 }
-?>

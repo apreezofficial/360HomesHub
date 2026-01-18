@@ -1,67 +1,38 @@
 <?php
-// /api/properties/list.php
 
-// --- Example Request ---
-// {
-//   "latitude": 40.7128,
-//   "longitude": -74.0060,
-//   "page": 1
-// }
-// --- Example Response ---
-// {
-//   "status": "success",
-//   "pagination": {
-//     "current_page": 1,
-//     "total_pages": 10,
-//     "total_results": 100
-//   },
-//   "properties": [
-//     {
-//       "id": 15,
-//       "name": "Cozy Studio Near Park",
-//       "image": "http://example.com/uploads/studio_main.jpg",
-//       "distance": 0.5,
-//       "price": 120,
-//       "price_type": "night",
-//       "city": "New York",
-//       "state": "NY"
-//     }
-//   ]
-// }
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/env.php';
+require_once __DIR__ . '/../../utils/db.php';
+require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/jwt.php';
+require_once __DIR__ . '/../../utils/geo.php';
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    send_error('Invalid request method.', [], 405);
+}
 
-require_once '../../vendor/autoload.php';
-require_once '../../utils/db.php';
-require_once '../../utils/jwt.php';
-require_once '../../utils/geo.php';
-require_once '../../utils/response.php';
+// Authenticate user via JWT
+$userData = JWTManager::authenticate();
+$userId = $userData['user_id'] ?? null;
+
+if (!$userId) {
+    send_error('Authentication failed.', [], 401);
+}
+
+// Get input data
+$data = json_decode(file_get_contents('php://input'), true);
+$user_lat = $data['latitude'] ?? null;
+$user_lon = $data['longitude'] ?? null;
+$page = isset($data['page']) ? (int)$data['page'] : 1;
+$limit = 10;
+$offset = ($page - 1) * $limit;
+
+if ($user_lat === null || $user_lon === null) {
+    send_error('Missing required fields: latitude, longitude.', [], 400);
+}
 
 try {
-    // Authenticate user
-    $jwt = get_jwt_from_header();
-    if (!$jwt) {
-        send_response('error', 'Authentication token not provided.');
-    }
-    $decoded = validate_jwt($jwt);
-    if (!$decoded) {
-        send_response('error', 'Invalid or expired token.');
-    }
-
-    // Get input data
-    $data = json_decode(file_get_contents('php://input'), true);
-    $user_lat = $data['latitude'] ?? null;
-    $user_lon = $data['longitude'] ?? null;
-    $page = isset($data['page']) ? (int)$data['page'] : 1;
-    $limit = 10;
-    $offset = ($page - 1) * $limit;
-
-    if ($user_lat === null || $user_lon === null) {
-        send_response('error', 'Missing required fields: latitude, longitude.');
-    }
-
-    // Get DB connection
-    $pdo = get_db_connection();
+    $pdo = Database::getInstance();
 
     // Count total properties for pagination
     $total_stmt = $pdo->query("SELECT COUNT(*) FROM properties");
@@ -119,12 +90,11 @@ try {
         'total_results' => $total_results,
     ];
 
-    send_response('success', null, [
+    send_success('Properties listed successfully.', [
         'pagination' => $pagination_data,
         'properties' => $response_properties
     ]);
 
 } catch (Exception $e) {
-    send_response('error', $e->getMessage());
+    send_error('An error occurred while fetching properties: ' . $e->getMessage(), [], 500);
 }
-?>

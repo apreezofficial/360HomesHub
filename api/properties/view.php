@@ -1,77 +1,36 @@
 <?php
-// /api/properties/view.php
 
-// --- Example Request ---
-// {
-//   "property_id": 12,
-//   "latitude": 40.7128,
-//   "longitude": -74.0060
-// }
-// --- Example Response ---
-// {
-//   "status": "success",
-//   "property": {
-//     "id": 12,
-//     "name": "Luxury Downtown Apartment",
-//     "description": "A beautiful apartment in the heart of the city.",
-//     "type": "apartment",
-//     "price": 250,
-//     "price_type": "night",
-//     "bedrooms": 2,
-//     "bathrooms": 2,
-//     "area": 1200,
-//     "booking_type": "instant",
-//     "free_cancellation": true,
-//     "amenities": ["wifi", "pool", "gym"],
-//     "city": "New York",
-//     "state": "NY",
-//     "latitude": 40.7138,
-//     "longitude": -74.0070,
-//     "distance": 0.1,
-//     "images": [
-//       "http://example.com/uploads/image1.jpg",
-//       "http://example.com/uploads/image2.jpg"
-//     ],
-//     "host": {
-//       "id": 5,
-//       "first_name": "John",
-//       "last_name": "Doe",
-//       "avatar": "http://example.com/avatars/johndoe.jpg"
-//     }
-//   }
-// }
+require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../config/env.php';
+require_once __DIR__ . '/../../utils/db.php';
+require_once __DIR__ . '/../../utils/response.php';
+require_once __DIR__ . '/../../utils/jwt.php';
+require_once __DIR__ . '/../../utils/geo.php';
 
-header('Content-Type: application/json');
+if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
+    send_error('Invalid request method.', [], 405);
+}
 
-require_once '../../vendor/autoload.php';
-require_once '../../utils/db.php';
-require_once '../../utils/jwt.php';
-require_once '../../utils/geo.php';
-require_once '../../utils/response.php';
+// Authenticate user via JWT
+$userData = JWTManager::authenticate();
+$userId = $userData['user_id'] ?? null;
+
+if (!$userId) {
+    send_error('Authentication failed.', [], 401);
+}
+
+// Get input data
+$data = json_decode(file_get_contents('php://input'), true);
+$property_id = $data['property_id'] ?? null;
+$user_lat = $data['latitude'] ?? null;
+$user_lon = $data['longitude'] ?? null;
+
+if (!$property_id || $user_lat === null || $user_lon === null) {
+    send_error('Missing required fields: property_id, latitude, longitude.', [], 400);
+}
 
 try {
-    // Authenticate user
-    $jwt = get_jwt_from_header();
-    if (!$jwt) {
-        send_response('error', 'Authentication token not provided.');
-    }
-    $decoded = validate_jwt($jwt);
-    if (!$decoded) {
-        send_response('error', 'Invalid or expired token.');
-    }
-
-    // Get input data
-    $data = json_decode(file_get_contents('php://input'), true);
-    $property_id = $data['property_id'] ?? null;
-    $user_lat = $data['latitude'] ?? null;
-    $user_lon = $data['longitude'] ?? null;
-
-    if (!$property_id || $user_lat === null || $user_lon === null) {
-        send_response('error', 'Missing required fields: property_id, latitude, longitude.');
-    }
-
-    // Get DB connection
-    $pdo = get_db_connection();
+    $pdo = Database::getInstance();
 
     // Fetch property details
     $stmt = $pdo->prepare("
@@ -84,7 +43,7 @@ try {
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$property) {
-        send_response('error', 'Property not found.');
+        send_error('Property not found.', [], 404);
     }
 
     // Fetch property images
@@ -123,9 +82,8 @@ try {
         ]
     ];
 
-    send_response('success', null, ['property' => $response_data]);
+    send_success('Property details retrieved successfully.', ['property' => $response_data]);
 
 } catch (Exception $e) {
-    send_response('error', $e->getMessage());
+    send_error('An error occurred while fetching property details: ' . $e->getMessage(), [], 500);
 }
-?>
