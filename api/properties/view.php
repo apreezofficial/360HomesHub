@@ -51,6 +51,15 @@ try {
     $img_stmt->execute([$property_id]);
     $images = $img_stmt->fetchAll(PDO::FETCH_COLUMN);
 
+    // Fetch amenities
+    $amenities_stmt = $pdo->prepare("
+        SELECT a.name FROM amenities a
+        INNER JOIN property_amenities pa ON a.id = pa.amenity_id
+        WHERE pa.property_id = ?
+    ");
+    $amenities_stmt->execute([$property_id]);
+    $amenities = $amenities_stmt->fetchAll(PDO::FETCH_COLUMN);
+
     // Calculate distance
     $distance = calculateDistance($user_lat, $user_lon, $property['latitude'], $property['longitude']);
 
@@ -67,7 +76,10 @@ try {
         'area' => (int) $property['area'],
         'booking_type' => $property['booking_type'],
         'free_cancellation' => (bool) $property['free_cancellation'],
-        'amenities' => json_decode($property['amenities']),
+        'cancellation_policy' => (bool) $property['cancellation_policy'],
+        'house_rules' => $property['house_rules'],
+        'important_information' => $property['important_information'],
+        'amenities' => $amenities,
         'city' => $property['city'],
         'state' => $property['state'],
         'latitude' => (float) $property['latitude'],
