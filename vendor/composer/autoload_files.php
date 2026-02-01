@@ -14,7 +14,6 @@ return array(
     'a8d3953fd9959404dd22d3dfcd0a79f0' => $vendorDir . '/google/apiclient/src/aliases.php',
     '0754989a10baadda533479884b399278' => $vendorDir . '/resend/resend-php/src/Resend.php',
     'f8ba2370829fa4dfbab3cf973cb9426d' => $baseDir . '/config/env.php',
-    '8d11c099c9b7589b035c4257b9059883' => $baseDir . '/config/logging.php',
     '25cdace21f6c1c28ec422b31cb87f120' => $baseDir . '/utils/response.php',
     'baab4ae793cf1c109ce066f794a1eda8' => $baseDir . '/utils/db.php',
     '750d9b17acffe3ceaa2a42d2d5da30d5' => $baseDir . '/utils/jwt.php',

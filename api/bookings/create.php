@@ -1,12 +1,16 @@
 <?php
+// Suppress PHP errors/warnings in output
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Always return JSON
+header('Content-Type: application/json');
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
-
-header("Content-Type: application/json");
 
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();

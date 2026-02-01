@@ -1,5 +1,12 @@
 <?php
 
+// Suppress PHP errors/warnings in output
+error_reporting(0);
+ini_set('display_errors', 0);
+
+// Always return JSON
+header('Content-Type: application/json');
+
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../config/env.php';
 require_once __DIR__ . '/../../utils/db.php';
@@ -19,15 +26,32 @@ if (!$userId) {
     send_error('Authentication failed.', [], 401);
 }
 
-// Get input data
-$data = json_decode(file_get_contents('php://input'), true);
-$property_id = $data['property_id'] ?? null;
+// Get raw POST data
+$input = file_get_contents('php://input');
+$data = json_decode($input, true);
+
+if (json_last_error() !== JSON_ERROR_NONE) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "Invalid JSON input"
+    ]);
+    exit;
+}
+
+// Validate required fields
+if (!isset($data['property_id'])) {
+    http_response_code(400);
+    echo json_encode([
+        "success" => false,
+        "message" => "Missing property_id"
+    ]);
+    exit;
+}
+
+$property_id = $data['property_id'];
 $user_lat = $data['latitude'] ?? null;
 $user_lon = $data['longitude'] ?? null;
-
-if (!$property_id || $user_lat === null || $user_lon === null) {
-    send_error('Missing required fields: property_id, latitude, longitude.', [], 400);
-}
 
 try {
     $pdo = Database::getInstance();
@@ -94,7 +118,11 @@ try {
         ]
     ];
 
-    send_success('Property details retrieved successfully.', ['property' => $response_data]);
+    echo json_encode([
+        "success" => true,
+        "property" => $response_data
+    ]);
+    exit;
 
 } catch (Exception $e) {
     send_error('An error occurred while fetching property details: ' . $e->getMessage(), [], 500);

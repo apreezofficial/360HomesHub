@@ -42,10 +42,9 @@ class Database {
     }
 }
 
-// Example usage (for testing connection, can be removed later):
-// try {
-//     $pdo = Database::getInstance();
-//     // echo "Database connected successfully!";
-// } catch (Exception $e) {
-//     // echo "Failed to connect to database.";
-// }
+/**
+ * Global helper for retrieving the PDO database connection.
+ */
+function get_db_connection(): PDO {
+    return Database::getInstance();
+}
