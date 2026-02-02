@@ -13,8 +13,7 @@ $userData = JWTManager::authenticate();
 $user_id = $userData['user_id'] ?? null; // This is the logged-in user's ID
 
 if (!$user_id) {
-    send_json_response(401, ["message" => "Unauthorized. Invalid or missing token."]);
-    exit;
+    send_error("Unauthorized. Invalid or missing token.", [], 401);
 }
 
 // --- Input Validation ---
@@ -22,8 +21,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 $booking_id = $input['booking_id'] ?? null;
 
 if (!$booking_id) {
-    send_json_response(400, ["message" => "Missing required field: booking_id."]);
-    exit;
+    send_error("Missing required field: booking_id.");
 }
 
 // --- Database Operations ---
@@ -42,21 +40,18 @@ try {
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$booking) {
-        send_json_response(404, ["message" => "Booking not found."]);
-        exit;
+        send_error("Booking not found.", [], 404);
     }
 
     // --- Authorization Check ---
     // Ensure the logged-in user is the host of this booking
     if ((int)$booking['host_id'] !== (int)$user_id) {
-        send_json_response(403, ["message" => "Forbidden. You are not the host of this booking."]);
-        exit;
+        send_error("Forbidden. You are not the host of this booking.", [], 403);
     }
 
     // Ensure booking is in a state that can be approved (e.g., pending)
     if ($booking['status'] !== 'pending') {
-        send_json_response(409, ["message" => "Booking is not in a pending state. Current status: {$booking['status']}."]);
-        exit;
+        send_error("Booking is not in a pending state. Current status: {$booking['status']}.", [], 409);
     }
 
     // --- Update Booking Status ---
@@ -89,17 +84,17 @@ try {
             'message' => 'Booking approved successfully.'
         ];
 
-        send_json_response(200, $updated_booking_data);
+        send_success("Booking approved successfully.", $updated_booking_data);
     } else {
-        send_json_response(500, ["message" => "Failed to update booking status."]);
+        send_error("Failed to update booking status.", [], 500);
     }
 
 } catch (PDOException $e) {
     error_log("Database error approving booking {$booking_id}: " . $e->getMessage());
-    send_json_response(500, ["message" => "Database error. Could not approve booking."]);
+    send_error("Database error. Could not approve booking.", [], 500);
 } catch (Exception $e) {
     error_log("General error approving booking {$booking_id}: " . $e->getMessage());
-    send_json_response(500, ["message" => "An unexpected error occurred during booking approval."]);
+    send_error("An unexpected error occurred during booking approval.", [], 500);
 }
 ?>
 

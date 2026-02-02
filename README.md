@@ -1,712 +1,385 @@
+# 360HomesHub 🏠
+
+## Description
+360HomesHub is a comprehensive real estate and short-let management ecosystem designed for modern property businesses. This project provides a robust backend infrastructure that handles the entire lifecycle of a property rental—from secure multi-channel user onboarding (Email, Phone, and Google OAuth) and mandatory KYC verification to dynamic pricing calculations and automated payment processing via Paystack and Flutterwave. The system includes a sophisticated administrative dashboard that gives operators full control over user verification, transaction monitoring, and real-time communication.
+
+## Features
+- **Multi-Channel Authentication**: Support for Email/Password, SMS-based registration, and Google OAuth.
+- **Mandatory KYC System**: A tiered verification process for hosts and guests, including document and selfie uploads.
+- **Dynamic Pricing Engine**: Automated calculation of rent, caution fees, taxes, and service charges.
+- **Payment Gateway Integration**: Seamless checkout experiences using Paystack and Flutterwave with webhook support.
+- **Real-Time Notifications**: Integrated messaging system and automated push/email notifications for booking updates.
+- **Administrative Control**: Full-featured panel for property approval, KYC review, and financial reporting.
+
+## Getting Started
+### Installation
+1. **Clone the Repository**:
+   ```bash
+   git clone https://github.com/apreezofficial/360HomesHub
+   ```
+2. **Install Dependencies**:
+   ```bash
+   composer install
+   ```
+3. **Database Configuration**:
+   - Create a MySQL database named `360homesub`.
+   - Import the project schema (if provided) or allow the system to initialize the connection.
+4. **Environment Setup**:
+   - Edit `config/env.php` to include your specific API keys and database credentials.
+5. **Serve the Application**:
+   - Move the folder to your `htdocs` or `www` directory.
+   - Access the API via `http://localhost/360HomesHub/api/`.
+
+### Environment Variables
+The following constants must be defined in `config/env.php`:
+- `DB_HOST`: Database host (e.g., localhost)
+- `DB_NAME`: Database name (e.g., 360homesub)
+- `DB_USER`: Database username
+- `DB_PASS`: Database password
+- `JWT_SECRET`: Secret key for token signing (Example: `Jfyeiotwyuqndtdghsjyg2diwhj`)
+- `TWILIO_ACCOUNT_SID`: For SMS OTP services
+- `RESEND_API_KEY`: For email delivery services
+- `PAYSTACK_SECRET_KEY`: For Paystack transaction verification
+- `FLUTTERWAVE_SECRET_KEY`: For Flutterwave transaction verification
+
+# 360HomesHub API
+
+## Overview
+A high-performance RESTful API backend built with PHP 8.1, utilizing JWT for secure authentication and a custom-built utility architecture for database and file management.
+
+## Features
+- **Firebase JWT**: Stateless user authentication and authorization
+- **PDO Singleton**: Optimized database connection management
+- **Custom Upload Manager**: Secure handling of identity documents and property media
+- **Geolocation Utility**: Haversine formula implementation for proximity-based property search
+
 ## API Documentation
+### Base URL
+`http://localhost/360HomesHub/api`
 
-### Authentication
-All authenticated endpoints require a JSON Web Token (JWT) to be passed in the `Authorization` header.
+### Endpoints
 
-**Format**: `Authorization: Bearer <your_jwt_token>`
-
-> **IMPORTANT**: The new Dashboard and Properties endpoints are location-aware. The frontend **MUST** provide the user's current `latitude` and `longitude` in the request body for these endpoints. The backend uses this to calculate distances and sort results in real-time. It does not use the user's saved profile location.
-
----
-
-### Auth
-
-#### `POST /api/auth/register_email.php`
-Registers a new user with their email and password. Sends an OTP to the provided email for verification.
-
-**Request Payload:**
+#### POST /auth/register_email
+**Request**:
 ```json
 {
   "email": "user@example.com",
-  "password": "password123"
+  "password": "StrongPassword123"
 }
 ```
-- `email` (string, required): The user's email address.
-- `password` (string, required): The user's password (min 8 characters).
-
-**Success Response (200 OK):**
+**Response**:
 ```json
 {
-  "status": "success",
+  "success": true,
   "message": "Registration successful. OTP sent to your email for verification.",
-  "data": {
-    "user_id": 123
-  }
+  "data": { "user_id": 1 }
 }
 ```
+**Errors**:
+- 400: Email and password are required
+- 409: Email already registered
 
-#### `POST /api/auth/register_phone.php`
-Registers a new user with their phone number and password. Sends an OTP to the provided phone number for verification.
-
-**Request Payload:**
+#### POST /auth/verify_otp
+**Request**:
 ```json
 {
-  "phone": "+1234567890",
-  "password": "password123"
-}
-```
-- `phone` (string, required): The user's phone number in E.164 format.
-- `password` (string, required): The user's password (min 8 characters).
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Registration successful. OTP sent to your phone for verification.",
-  "data": {
-    "user_id": 123
-  }
-}
-```
-
-#### `POST /api/auth/verify_otp.php`
-Verifies the OTP sent to the user's email or phone. Returns a JWT to be used for subsequent authenticated requests.
-
-**Request Payload:**
-```json
-{
-  "user_id": 123,
+  "user_id": 1,
   "otp_code": "123456"
 }
 ```
-- `user_id` (integer, required): The ID of the user being verified.
-- `otp_code` (string, required): The OTP code sent to the user.
-
-**Success Response (200 OK):**
+**Response**:
 ```json
 {
-  "status": "success",
+  "success": true,
   "message": "OTP verified successfully.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "profile"
+  "data": { 
+    "token": "JWT_TOKEN_HERE",
+    "onboarding_step": "profile" 
   }
 }
 ```
+**Errors**:
+- 400: Invalid or expired OTP
 
-#### `POST /api/auth/login.php`
-Logs in a user with their email/phone and password. Returns a JWT.
-
-**Request Payload:**
+#### POST /properties/list
+**Request**:
 ```json
 {
-  "email": "user@example.com",
-  "password": "password123"
-}
-```
-or
-```json
-{
-  "phone": "+1234567890",
-  "password": "password123"
-}
-```
-- `email` or `phone` (string, required): The user's email or phone.
-- `password` (string, required): The user's password.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Login successful.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "completed",
-    "is_verified": true,
-    "role": "guest"
-  }
-}
-```
-
-#### `POST /api/auth/google_auth.php`
-Authenticates a user with a Google ID token. Creates a new user if one doesn't exist. Returns a JWT.
-
-**Request Payload:**
-```json
-{
-  "id_token": "ey..."
-}
-```
-- `id_token` (string, required): The Google ID token obtained from the frontend.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Google authentication successful.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "password",
-    "is_verified": false,
-    "role": null
-  }
-}
-```
-
-#### `POST /api/auth/set_password.php`
-Allows a user to set or change their password. This is required for users who registered via Google.
-
-**Request Payload:**
-```json
-{
-  "password": "new_password123"
-}
-```
-- `password` (string, required): The new password (min 8 characters).
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Password set successfully. Please complete your profile.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "profile"
-  }
-}
-```
-
----
-
-### Onboarding
-
-The onboarding process is a multi-step workflow. Each step, when completed successfully, returns a new JWT that includes the next `onboarding_step` in its payload.
-
-#### `POST /api/onboarding/set_profile.php`
-Sets the user's first name, last name, and bio.
-
-**Request Payload:**
-```json
-{
-  "first_name": "John",
-  "last_name": "Doe",
-  "bio": "Software developer from New York."
-}
-```
-- `first_name`, `last_name` (string, required): The user's name.
-- `bio` (string, optional): A short biography.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Profile updated successfully. Please set your location.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "location"
-  }
-}
-```
-
-#### `POST /api/onboarding/set_location.php`
-Sets the user's geographical location.
-
-**Request Payload:**
-```json
-{
-  "address": "123 Main St",
-  "city": "New York",
-  "state": "NY",
-  "country": "USA"
-}
-```
-- `address`, `city`, `state`, `country` (string, required): The user's location details.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Location updated successfully. Please upload your avatar.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "avatar"
-  }
-}
-```
-
-#### `POST /api/onboarding/upload_avatar.php`
-Uploads a user's avatar. The request must be `multipart/form-data`.
-
-**Request Payload:**
-- `avatar`: The avatar image file.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Avatar uploaded successfully. Please select your role.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "role",
-    "avatar_url": "/public/uploads/..."
-  }
-}
-```
-
-#### `POST /api/onboarding/set_role.php`
-Sets the user's role as either a `guest` or a `host`.
-
-**Request Payload:**
-```json
-{
-  "role": "guest"
-}
-```
-- `role` (string, required): Must be `guest` or `host`.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Role selected successfully. Please proceed to KYC verification.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "kyc",
-    "role": "guest"
-  }
-}
-```
-
----
-
-### KYC (Know Your Customer)
-
-The KYC process is the final step of user verification.
-
-#### `GET /api/kyc/kyc_status.php`
-Retrieves the current status of the user's KYC application.
-
-**Request Payload:** None.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "KYC application status retrieved successfully.",
-  "data": {
-    "kyc": {
-      "id": 1,
-      "country": "USA",
-      "identity_type": "passport",
-      "status": "pending",
-      "admin_note": null,
-      "submitted_at": "2026-01-18 12:00:00",
-      "id_front_url": "/public/uploads/...",
-      "id_back_url": "/public/uploads/...",
-      "selfie_url": "/public/uploads/..."
-    }
-  }
-}
-```
-
-#### `POST /api/kyc/start_kyc.php`
-Initiates the KYC process by specifying the country and identity document type.
-
-**Request Payload:**
-```json
-{
-  "country": "USA",
-  "identity_type": "passport"
-}
-```
-- `country` (string, required): The user's country.
-- `identity_type` (string, required): One of `passport`, `national_id`, `drivers_license`.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "KYC initiated. Please proceed to upload your identity documents.",
-  "data": {
-    "country": "USA",
-    "identity_type": "passport"
-  }
-}
-```
-
-#### `POST /api/kyc/upload_documents.php`
-Uploads the front and back of the user's identity document. The request must be `multipart/form-data`.
-
-**Request Payload:**
-- `id_front`: The image file of the front of the ID.
-- `id_back`: The image file of the back of the ID.
-- `country` (string, required): The user's country.
-- `identity_type` (string, required): The type of ID.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Identity documents uploaded successfully. Please proceed to upload your selfie.",
-  "data": {
-    "id_front_url": "/public/uploads/...",
-    "id_back_url": "/public/uploads/..."
-  }
-}
-```
-
-#### `POST /api/kyc/upload_selfie.php`
-Uploads a selfie of the user for verification and completes the user's onboarding. The request must be `multipart/form-data`.
-
-**Request Payload:**
-- `selfie`: The selfie image file.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Selfie uploaded and KYC application submitted for review. You will be notified of the status.",
-  "data": {
-    "token": "ey...",
-    "onboarding_step": "completed",
-    "selfie_url": "/public/uploads/..."
-  }
-}
-```
-
----
-
-### Dashboard & Counts
-
-#### `GET /api/dashboard/home.php`
-Retrieves all necessary data for the main dashboard view, including a welcome message, unread counts, and a list of nearby properties.
-
-**Request Payload:**
-```json
-{
-  "latitude": 40.7128,
-  "longitude": -74.0060
-}
-```
-- `latitude` (float, required): The user's current latitude.
-- `longitude` (float, required): The user's current longitude.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "data": {
-    "welcome_message": "Welcome back, John!",
-    "unread_notifications": 5,
-    "unread_messages": 3,
-    "property_categories": {
-      "apartment": 50,
-      "house": 30,
-      "studio": 20,
-      "duplex": 10,
-      "hotel": 5
-    },
-    "nearby_properties": [
-      {
-        "id": 15,
-        "name": "Cozy Studio Near Park",
-        "image": "http://example.com/uploads/studio_main.jpg",
-        "distance": 0.5,
-        "price": 120.00,
-        "price_type": "night",
-        "city": "New York",
-        "state": "NY"
-      }
-    ]
-  }
-}
-```
-
-#### `GET /api/messages/unread_count.php`
-Returns the count of unread messages for the authenticated user.
-
-**Request Payload:** None.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "data": {
-    "unread_count": 3
-  }
-}
-```
-
-#### `GET /api/notifications/unread_count.php`
-Returns the count of unread notifications for the authenticated user.
-
-**Request Payload:** None.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "data": {
-    "unread_count": 5
-  }
-}
-```
-
----
-
-### Properties
-
-#### `POST /api/properties/list.php`
-Fetches a paginated list of all available properties, sorted by the nearest distance to the user's current location.
-
-**Request Payload:**
-```json
-{
-  "latitude": 40.7128,
-  "longitude": -74.0060,
+  "latitude": 6.5244,
+  "longitude": 3.3792,
   "page": 1
 }
 ```
-- `latitude` (float, required): The user's current latitude.
-- `longitude` (float, required): The user's current longitude.
-- `page` (integer, optional, default: 1): The page number for pagination.
-
-**Success Response (200 OK):**
+**Response**:
 ```json
 {
-  "status": "success",
+  "success": true,
   "data": {
-    "pagination": {
-      "current_page": 1,
-      "total_pages": 10,
-      "total_results": 100
-    },
     "properties": [
       {
-        "id": 15,
-        "name": "Cozy Studio Near Park",
-        "image": "http://example.com/uploads/studio_main.jpg",
-        "distance": 0.5,
-        "price": 120.00,
-        "price_type": "night",
-        "city": "New York",
-        "state": "NY"
+        "id": 1,
+        "name": "Luxury Studio",
+        "distance": 2.5,
+        "price": 50000.00
       }
     ]
   }
 }
 ```
 
-#### `POST /api/properties/view.php`
-Retrieves full details for a single property, including all its images, host information, and its distance from the user.
-
-**Request Payload:**
+#### POST /bookings/calculate
+**Request**:
 ```json
 {
-  "property_id": 12,
-  "latitude": 40.7128,
-  "longitude": -74.0060
+  "property_id": 1,
+  "check_in": "2024-12-01",
+  "check_out": "2024-12-05",
+  "adults": 2,
+  "children": 1,
+  "rooms": 1
 }
 ```
-- `property_id` (integer, required): The ID of the property to view.
-- `latitude` (float, required): The user's current latitude.
-- `longitude` (float, required): The user's current longitude.
-
-**Success Response (200 OK):**
+**Response**:
 ```json
 {
-  "status": "success",
+  "success": true,
   "data": {
-    "property": {
-      "id": 12,
-      "name": "Luxury Downtown Apartment",
-      "description": "A beautiful apartment in the heart of the city.",
-      "type": "apartment",
-      "price": 250.00,
-      "price_type": "night",
-      "bedrooms": 2,
-      "bathrooms": 2,
-      "area": 1200,
-      "booking_type": "instant",
-      "free_cancellation": true,
-      "amenities": ["wifi", "pool", "gym"],
-      "city": "New York",
-      "state": "NY",
-      "distance": 0.1,
-      "images": [
-        "http://example.com/uploads/image1.jpg",
-        "http://example.com/uploads/image2.jpg"
-      ],
-      "host": {
-        "id": 5,
-        "first_name": "John",
-        "last_name": "Doe",
-        "avatar": "http://example.com/avatars/johndoe.jpg"
-      }
+    "booking_calculation": {
+      "rent_amount": 200000.00,
+      "caution_fee": 5000.00,
+      "service_fee": 20000.00,
+      "tax_amount": 15000.00,
+      "total_amount": 240000.00
     }
   }
 }
 ```
 
-#### `POST /api/properties/search.php`
-Performs a powerful search for properties based on a combination of filters. All results are sorted by distance.
-
-**Request Payload:**
-> All filter fields are optional.
-
-```json
-{
-  "latitude": 40.7128,
-  "longitude": -74.0060,
-  "keyword": "beachfront",
-  "type": "apartment",
-  "price_min": 100,
-  "price_max": 500,
-  "bedrooms": 2,
-  "bathrooms": 1,
-  "booking_type": "instant",
-  "free_cancellation": true
-}
-```
-- `latitude`, `longitude` (float, required): User's current location.
-- `keyword` (string): Searches `name`, `city`, and `state` fields.
-- `type` (string): One of `apartment`, `house`, `studio`, `duplex`, `hotel`.
-- `price_min`, `price_max` (integer): Price range for filtering.
-- `bedrooms`, `bathrooms` (integer): Minimum number of bedrooms/bathrooms.
-- `booking_type` (string): `instant` or `request`.
-- `free_cancellation` (boolean): `true` to only show properties with free cancellation.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "data": {
-    "results_count": 1,
-    "applied_filters": {
-      "keyword": "beachfront",
-      "type": "apartment",
-      "price_min": 100,
-      "price_max": 500
-    },
-    "properties": [
-      {
-        "id": 25,
-        "name": "Modern Beachfront Apartment",
-        "image": "http://example.com/uploads/beach_apt.jpg",
-        "distance": 15.3,
-        "price": 450.00,
-        "price_type": "night",
-        "city": "Miami",
-        "state": "FL"
-      }
-    ]
-  }
-}
-```
-
----
-### Admin
-
-Admin endpoints require an admin-level JWT.
-
-#### `POST /api/admin/login.php`
-Logs in an admin user.
-
-**Request Payload:**
-```json
-{
-  "email": "admin@example.com",
-  "password": "adminpassword"
-}
-```
-- `email` (string, required): The admin's email.
-- `password` (string, required): The admin's password.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "Admin login successful.",
-  "data": {
-    "token": "ey...",
-    "role": "admin"
-  }
-}
-```
-
-#### `GET /api/admin/kyc_list.php`
-Retrieves a list of all KYC applications. Can be filtered by status.
-
-**Query Parameters:**
-- `status` (string, optional): Filter by `pending`, `approved`, or `rejected`.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "KYC applications retrieved successfully.",
-  "data": {
-    "applications": [
-      {
-        "id": 1,
-        "user_id": 123,
-        "email": "user@example.com",
-        "status": "pending",
-        ...
-      }
-    ]
-  }
-}
-```
-
-#### `POST /api/admin/approve_kyc.php`
-Approves a user's KYC application.
-
-**Request Payload:**
+#### POST /admin/approve_kyc
+**Request**:
 ```json
 {
   "kyc_id": 1
 }
 ```
-- `kyc_id` (integer, required): The ID of the KYC application to approve.
-
-**Success Response (200 OK):**
+**Response**:
 ```json
 {
-  "status": "success",
+  "success": true,
   "message": "KYC application approved and user verified.",
-  "data": {
-    "kyc_id": 1,
-    "user_id": 123
-  }
+  "data": { "kyc_id": 1, "user_id": 5 }
 }
 ```
-
-#### `POST /api/admin/reject_kyc.php`
-Rejects a user's KYC application.
-
-**Request Payload:**
-```json
-{
-  "kyc_id": 1,
-  "admin_note": "ID photo is blurry."
-}
-```
-- `kyc_id` (integer, required): The ID of the KYC application to reject.
-- `admin_note` (string, optional): A reason for the rejection.
-
-**Success Response (200 OK):**
-```json
-{
-  "status": "success",
-  "message": "KYC application rejected.",
-  "data": {
-    "kyc_id": 1,
-    "admin_note": "ID photo is blurry."
-  }
-}
-```
+**Errors**:
+- 403: Admin privileges required
 
 ---
 
-### Common Error Response
+## Complete API Reference
 
-If a request fails due to invalid input, authentication issues, or server errors, the API will return a standardized error response.
+### Authentication Endpoints
 
-**Example Error (400 Bad Request):**
-```json
-{
-  "status": "error",
-  "message": "Missing required fields: latitude, longitude."
-}
-```
+#### POST /auth/register_email
+Register a new user with email and password.
+- **Auth**: None
+- **Body**: `{ "email": "user@example.com", "password": "Pass123!" }`
+- **Success**: `{ "success": true, "message": "Registration successful. OTP sent to your email for verification.", "data": { "user_id": 1 } }`
+
+#### POST /auth/register_phone
+Register with phone number.
+- **Auth**: None  
+- **Body**: `{ "phone": "+2349012345678", "password": "Pass123!" }`
+
+#### POST /auth/verify_otp
+Verify OTP sent to email/phone.
+- **Auth**: None
+- **Body**: `{ "user_id": 1, "otp_code": "123456" }`
+- **Success**: Returns JWT token
+
+#### POST /auth/login
+Login with email/phone and password.
+- **Auth**: None
+- **Body**: `{ "email": "user@example.com", "password": "Pass123!" }`
+- **Success**: Returns JWT token
+
+---
+
+### Onboarding Endpoints  
+
+#### POST /onboarding/set_profile
+Set user profile information.
+- **Auth**: JWT required
+- **Body**: `{ "first_name": "John", "last_name": "Doe", "bio": "..." }`
+
+#### POST /onboarding/set_location
+Set user location.
+- **Auth**: JWT required
+- **Body**: `{ "address": "...", "city": "Lagos", "state": "Lagos", "country": "Nigeria", "latitude": 6.5244, "longitude": 3.3792 }`
+
+#### POST /onboarding/upload_avatar
+Upload user avatar.
+- **Auth**: JWT required
+- **Body**: Multipart form with `avatar` file
+
+#### POST /onboarding/set_role
+Select user role (guest/host).
+- **Auth**: JWT required
+- **Body**: `{ "role": "host" }`
+
+---
+
+### KYC Endpoints
+
+#### POST /kyc/start_kyc
+Initiate KYC verification.
+- **Auth**: JWT required
+- **Body**: `{ "country": "Nigeria", "identity_type": "passport" }`
+
+#### POST /kyc/upload_documents
+Upload ID documents.
+- **Auth**: JWT required
+- **Body**: Multipart form with `id_front` and `id_back` files
+
+#### POST /kyc/upload_selfie
+Upload selfie for verification.
+- **Auth**: JWT required
+- **Body**: Multipart form with `selfie` file
+- **Success**: Marks onboarding as completed
+
+---
+
+### Property Endpoints
+
+#### GET /properties/list
+List properties near a location.
+- **Auth**: Optional JWT
+- **Body**: `{ "latitude": 6.5244, "longitude": 3.3792, "page": 1 }`
+- **Success**: Returns paginated list of properties with distance
+
+#### GET /properties/amenities
+Get list of all available amenities.
+- **Auth**: None
+- **Success**: `{ "success": true, "message": "Amenities retrieved.", "data": { "amenities": [{"id": 1, "name": "WiFi"}, ...] } }`
+
+#### GET /properties/rules
+Get house rules.
+- **Auth**: None
+- **Success**: `{ "success": true, "message": "House rules retrieved.", "data": { "house_rules": ["No smoking inside the property.", ...] } }`
+
+---
+
+### Booking Endpoints
+
+#### POST /bookings/calculate
+Calculate booking costs.
+- **Auth**: JWT required
+- **Body**: `{ "property_id": 1, "check_in": "2024-12-01", "check_out": "2024-12-05", "adults": 2, "children": 1, "rooms": 1 }`
+- **Success**: Returns breakdown of rent, fees, taxes, and total amount
+
+#### POST /bookings/create
+Create a new booking request.
+- **Auth**: JWT required (guest)
+- **Body**: Same as `/bookings/calculate`
+- **Success**: Creates booking with status "pending"
+
+#### POST /bookings/approve
+Approve a booking (host only).
+- **Auth**: JWT required (host)
+- **Body**: `{ "booking_id": 5 }`
+- **Success**: Updates booking status to "approved"
+
+#### POST /bookings/reject
+Reject a booking (host only).
+- **Auth**: JWT required (host)
+- **Body**: `{ "booking_id": 5, "rejection_reason": "Property under maintenance" }`
+- **Success**: Updates booking status to "rejected"
+
+#### POST /bookings/checkout
+Initiate payment for approved booking.
+- **Auth**: JWT required (guest)
+- **Body**: `{ "booking_id": 5 }`
+- **Success**: Returns payment gateway checkout URL
+
+#### POST /bookings/status
+Get booking status.
+- **Auth**: JWT required (guest or host)
+- **Body**: `{ "booking_id": 5 }`
+- **Success**: Returns booking details and current status
+
+---
+
+### Admin Endpoints
+
+#### POST /admin/login
+Admin login.
+- **Auth**: None
+- **Body**: `{ "email": "admin@360homeshub.com", "password": "AdminPass123!" }`
+- **Success**: Returns JWT token (admin role required)
+
+#### POST /admin/create_user
+Create a new user (admin only).
+- **Auth**: JWT required (admin)
+- **Body**: `{ "email": "user@example.com", "password": "Pass123!", "first_name": "John", "last_name": "Doe", "role": "guest" }`
+
+#### POST /admin/create_property
+Create a property (admin only).
+- **Auth**: JWT required (admin)
+- **Body**: Property details including name, type, price, location, amenities
+
+#### GET /admin/users
+List all users (admin only).
+- **Auth**: JWT required (admin)
+
+#### GET /admin/properties
+List all properties (admin only).
+- **Auth**: JWT required (admin)
+
+#### POST /admin/approve_kyc
+Approve KYC application.
+- **Auth**: JWT required (admin)
+- **Body**: `{ "kyc_id": 1 }`
+
+#### POST /admin/reject_kyc
+Reject KYC application.
+- **Auth**: JWT required (admin)
+- **Body**: `{ "kyc_id": 1, "reason": "Documents unclear" }`
+
+---
+
+### Payment Webhook
+
+#### POST /payments/webhook
+Payment gateway webhook (Paystack/Flutterwave).
+- **Auth**: Gateway signature verification
+- **Body**: Payment event data from gateway
+- **Success**: Updates booking status to "paid" and credits host wallet
+
+
+## Technologies Used
+| Technology | Purpose | Link |
+| :--- | :--- | :--- |
+| **PHP 8.1+** | Backend Logic | [php.net](https://www.php.net/) |
+| **MySQL** | Database Management | [mysql.com](https://www.mysql.com/) |
+| **Firebase JWT** | Security & Auth | [github.com/firebase/php-jwt](https://github.com/firebase/php-jwt) |
+| **Paystack** | Payment Processing | [paystack.com](https://paystack.com/) |
+| **Flutterwave** | Global Payments | [flutterwave.com](https://flutterwave.com/) |
+| **Twilio** | SMS OTP Services | [twilio.com](https://www.twilio.com/) |
+
+## Contributing
+- 🚀 Fork the project repository.
+- 🌿 Create a new feature branch: `git checkout -b feature/YourFeatureName`.
+- 💾 Commit your changes: `git commit -m 'Add some feature'`.
+- 📤 Push to the branch: `git push origin feature/YourFeatureName`.
+- 🔍 Open a pull request for review.
+
+## Author Info
+**[Your Name]**
+- GitHub: [apreezofficial](https://github.com/apreezofficial)
+- LinkedIn: [Your Username]
+- Twitter: [Your Username]
+
+[![Build Status](https://img.shields.io/badge/build-passing-brightgreen)](#)
+[![PHP Version](https://img.shields.io/badge/php-%3E%3D%208.1-blue)](#)
+[![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](#)
+
+[![Readme was generated by Dokugen](https://img.shields.io/badge/Readme%20was%20generated%20by-Dokugen-brightgreen)](https://www.npmjs.com/package/dokugen)

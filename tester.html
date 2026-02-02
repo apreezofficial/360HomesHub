@@ -408,7 +408,15 @@
             { cat: 'Payments', name: 'Checkout (Flutterwave)', path: 'api/payments/checkout.php', method: 'POST', body: { amount: 5000, gateway: 'flutterwave', booking_id: 101 } },
             { cat: 'Payments', name: 'Verify Payment', path: 'api/payments/verify.php?gateway=paystack&reference=REF123', method: 'GET' },
 
+            { cat: 'Host Onboarding', name: '1. Init Listing', path: 'api/properties/onboarding/init_listing.php', method: 'POST', body: { country: 'Nigeria', address: '123 Lekki Phase 1', apartment_suite: 'Suite 4', city: 'Lekki', state: 'Lagos', zip_code: '100001', latitude: 6.4483, longitude: 3.4767 } },
+            { cat: 'Host Onboarding', name: '2. Update Details', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 2, type: 'apartment', space_type: 'private', guests_max: 2, bedrooms: 1, bathrooms: 1, beds: 1 } },
+            { cat: 'Host Onboarding', name: '3. Amenities & Rules', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 3, amenities: ["wifi", "air conditioning", "fan", "couch"], extra_rules: ["no smoking", "no pets"], check_in_time: "14:00", check_out_time: "11:00", age_restriction: 1 } },
+            { cat: 'Host Onboarding', name: '4. Upload Media', path: 'api/properties/onboarding/upload_media.php', method: 'POST', body: { property_id: 1, note: 'Use multipart/form-data' } },
+            { cat: 'Host Onboarding', name: '5. Pricing Preview', path: 'api/properties/onboarding/pricing_preview.php', method: 'POST', body: { price: 25000 } },
+            { cat: 'Host Onboarding', name: '6. Publish', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 6, status: 'published', price: 25000, cancellation_policy: 'moderate', instant_booking: 1 } },
+
             { cat: 'Admin', name: 'Login', path: 'api/admin/login.php', method: 'POST', body: { email: 'admin@example.com', password: 'adminpassword' } },
+            { cat: 'Admin', name: 'Properties List', path: 'api/admin/properties.php', method: 'GET' },
             { cat: 'Admin', name: 'KYC List', path: 'api/admin/kyc_list.php', method: 'GET' },
             { cat: 'Admin', name: 'Approve KYC', path: 'api/admin/approve_kyc.php', method: 'POST', body: { kyc_id: 1 } },
             { cat: 'Admin', name: 'Reject KYC', path: 'api/admin/reject_kyc.php', method: 'POST', body: { kyc_id: 1, admin_note: 'ID is blurry' } }

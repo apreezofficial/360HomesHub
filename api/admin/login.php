@@ -35,9 +35,11 @@ if ($user['role'] !== 'admin') {
     send_error('Access denied. Not an admin user.', [], 403);
 }
 
-// Ensure admin users have completed onboarding for login
+// Auto-complete onboarding for admin users if not already done
 if ($user['onboarding_step'] !== 'completed') {
-    send_error('Admin account onboarding not completed.', ['onboarding_step' => $user['onboarding_step']], 403);
+    $stmt = $pdo->prepare("UPDATE users SET onboarding_step = 'completed' WHERE id = ?");
+    $stmt->execute([$user['id']]);
+    $user['onboarding_step'] = 'completed';
 }
 
 $jwtData = [

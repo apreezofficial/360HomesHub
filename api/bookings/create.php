@@ -17,8 +17,7 @@ $userData = JWTManager::authenticate();
 $guest_id = $userData['user_id'] ?? null;
 
 if (!$guest_id) {
-    send_json_response(401, ["message" => "Unauthorized. Invalid or missing token."]);
-    exit;
+    send_error("Unauthorized. Invalid or missing token.", [], 401);
 }
 
 // --- Input Validation ---
@@ -33,8 +32,7 @@ $rooms = isset($input['rooms']) ? (int)$input['rooms'] : null;
 
 // Basic validation
 if (!$property_id || !$check_in_str || !$check_out_str || $adults === null || $children === null || $rooms === null) {
-    send_json_response(400, ["message" => "Missing required fields. Please provide property_id, check_in, check_out, adults, children, and rooms."]);
-    exit;
+    send_error("Missing required fields. Please provide property_id, check_in, check_out, adults, children, and rooms.");
 }
 
 // Date validation
@@ -43,24 +41,20 @@ $check_out_date = DateTime::createFromFormat('Y-m-d', $check_out_str);
 $today = new DateTime();
 
 if (!$check_in_date || !$check_out_date) {
-    send_json_response(400, ["message" => "Invalid date format. Please use YYYY-MM-DD."]);
-    exit;
+    send_error("Invalid date format. Please use YYYY-MM-DD.");
 }
 
 if ($check_in_date < $today->setTime(0,0,0)) {
-     send_json_response(400, ["message" => "Check-in date must be today or in the future."]);
-    exit;
+     send_error("Check-in date must be today or in the future.");
 }
 
 if ($check_out_date <= $check_in_date) {
-    send_json_response(400, ["message" => "Check-out date must be after check-in date."]);
-    exit;
+    send_error("Check-out date must be after check-in date.");
 }
 
 // Numeric validation
 if ($adults < 0 || $children < 0 || $rooms < 0) {
-    send_json_response(400, ["message" => "Number of adults, children, and rooms cannot be negative."]);
-    exit;
+    send_error("Number of adults, children, and rooms cannot be negative.");
 }
 
 // --- Database Operations ---
@@ -78,8 +72,7 @@ try {
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$property) {
-        send_json_response(404, ["message" => "Property not found."]);
-        exit;
+        send_error("Property not found.", [], 404);
     }
 
     $host_id = $property['host_id'];
@@ -94,8 +87,7 @@ try {
     // Fetch fees from config
     if (!isset($config['fees']['caution_fee']) || !isset($config['fees']['service_fee_percentage']) || !isset($config['fees']['tax_percentage'])) {
          error_log("Payment fees configuration is incomplete.");
-         send_json_response(500, ["message" => "Configuration error: Missing fee details."]);
-         exit;
+         send_error("Configuration error: Missing fee details.", [], 500);
     }
     $caution_fee_config = (float)$config['fees']['caution_fee'];
     $service_fee_percent_config = (float)$config['fees']['service_fee_percentage'];
@@ -183,17 +175,17 @@ try {
             'created_at' => date('Y-m-d H:i:s') // Get current timestamp
         ];
 
-        send_json_response(201, ["message" => "Booking request created successfully.", "booking" => $created_booking_data]);
+        send_success("Booking request created successfully.", ["booking" => $created_booking_data], 201);
     } else {
-        send_json_response(500, ["message" => "Failed to create booking request."]);
+        send_error("Failed to create booking request.", [], 500);
     }
 
 } catch (PDOException $e) {
     error_log("Database error during booking creation: " . $e->getMessage());
-    send_json_response(500, ["message" => "Database error. Could not create booking."]);
+    send_error("Database error. Could not create booking.", [], 500);
 } catch (Exception $e) {
     error_log("General error during booking creation: " . $e->getMessage());
-    send_json_response(500, ["message" => "An unexpected error occurred during booking creation."]);
+    send_error("An unexpected error occurred during booking creation.", [], 500);
 }
 ?>
 

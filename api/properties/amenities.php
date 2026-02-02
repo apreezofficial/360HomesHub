@@ -20,16 +20,16 @@ try {
     $amenities = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     // Return the list of amenities
-    send_json_response(200, ["amenities" => $amenities]);
+    send_success("Amenities retrieved.", ["amenities" => $amenities]);
 
 } catch (PDOException $e) {
     // Log the error securely
     error_log("Database error fetching amenities: " . $e->getMessage());
-    send_json_response(500, ["message" => "Internal server error. Could not retrieve amenities."]);
+    send_error("Internal server error. Could not retrieve amenities.", [], 500);
 } catch (Exception $e) {
     // Log other general errors
     error_log("General error fetching amenities: " . $e->getMessage());
-    send_json_response(500, ["message" => "An unexpected error occurred."]);
+    send_error("An unexpected error occurred.", [], 500);
 }
 ?>
 

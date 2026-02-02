@@ -17,8 +17,7 @@ $userData = JWTManager::authenticate();
 $guest_id = $userData['user_id'] ?? null;
 
 if (!$guest_id) {
-    send_json_response(401, ["message" => "Unauthorized. Invalid or missing token."]);
-    exit;
+    send_error("Unauthorized. Invalid or missing token.", [], 401);
 }
 
 // --- Input Validation ---
@@ -26,8 +25,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 $booking_id = $input['booking_id'] ?? null;
 
 if (!$booking_id) {
-    send_json_response(400, ["message" => "Missing required field: booking_id."]);
-    exit;
+    send_error("Missing required field: booking_id.");
 }
 
 // --- Database Operations ---
@@ -46,22 +44,19 @@ try {
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$booking) {
-        send_json_response(404, ["message" => "Booking not found."]);
-        exit;
+        send_error("Booking not found.", [], 404);
     }
 
     // --- Authorization Check ---
     // Ensure the logged-in user is the guest who made the booking
     if ((int)$booking['guest_id'] !== (int)$guest_id) {
-        send_json_response(403, ["message" => "Forbidden. You are not the guest of this booking."]);
-        exit;
+        send_error("Forbidden. You are not the guest of this booking.", [], 403);
     }
 
     // --- Status and Payment Check ---
     // Booking must be approved and not yet paid
     if ($booking['status'] !== 'approved') {
-        send_json_response(409, ["message" => "Booking is not in an approved state. Current status: {$booking['status']}."]);
-        exit;
+        send_error("Booking is not in an approved state. Current status: {$booking['status']}.", [], 409);
     }
     // Check if already paid, though status 'paid' should prevent this branch if db has FKs or app logic is strict.
     // For simplicity, we rely on 'approved' state implying 'not paid' here.
@@ -98,8 +93,7 @@ try {
 
     } else { // Example for Flutterwave (if needed)
         // $checkout_url = "https://flutterwave.example.com/pay?booking_id={$booking_id}&amount={$booking['total_amount']}";
-        send_json_response(501, ["message" => "Payment gateway not supported yet."]);
-        exit;
+        send_error("Payment gateway not supported yet.", [], 501);
     }
 
     // --- Send Notifications ---
@@ -121,14 +115,14 @@ try {
         'message' => 'Checkout initiated. Please proceed to payment.'
     ];
 
-    send_json_response(200, $response_data);
+    send_success("Checkout initiated. Please proceed to payment.", $response_data);
 
 } catch (PDOException $e) {
     error_log("Database error during checkout for booking {$booking_id}: " . $e->getMessage());
-    send_json_response(500, ["message" => "Database error. Could not initiate checkout."]);
+    send_error("Database error. Could not initiate checkout.", [], 500);
 } catch (Exception $e) {
     error_log("General error during checkout for booking {$booking_id}: " . $e->getMessage());
-    send_json_response(500, ["message" => "An unexpected error occurred during checkout initiation."]);
+    send_error("An unexpected error occurred during checkout initiation.", [], 500);
 }
 ?>
 

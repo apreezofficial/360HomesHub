@@ -21,7 +21,7 @@ $house_rules = [
 ];
 
 // Return the list of house rules
-send_json_response(200, ["house_rules" => $house_rules]);
+send_success("House rules retrieved.", ["house_rules" => $house_rules]);
 
 ?>
 

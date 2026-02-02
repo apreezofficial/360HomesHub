@@ -10,8 +10,7 @@ require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 if (!file_exists(__DIR__ . '/../../config/fees.php')) {
     // Handle case where config file is missing, though it should be created earlier.
     error_log("Config file config/fees.php not found.");
-    send_json_response(500, ["message" => "Configuration error: Fees configuration not found."]);
-    exit;
+    send_error("Configuration error: Fees configuration not found.", [], 500);
 }
 require_once __DIR__ . '/../../config/fees.php';
 
@@ -22,8 +21,7 @@ $userData = JWTManager::authenticate();
 $guest_id = $userData['user_id'] ?? null;
 
 if (!$guest_id) {
-    send_json_response(401, ["message" => "Unauthorized. Invalid or missing token."]);
-    exit;
+    send_error("Unauthorized. Invalid or missing token.", [], 401);
 }
 
 // --- Input Validation ---
@@ -38,8 +36,7 @@ $rooms = isset($input['rooms']) ? (int)$input['rooms'] : null;
 
 // Basic validation
 if (!$property_id || !$check_in_str || !$check_out_str || $adults === null || $children === null || $rooms === null) {
-    send_json_response(400, ["message" => "Missing required fields. Please provide property_id, check_in, check_out, adults, children, and rooms."]);
-    exit;
+    send_error("Missing required fields. Please provide property_id, check_in, check_out, adults, children, and rooms.");
 }
 
 // Date validation
@@ -48,24 +45,20 @@ $check_out_date = DateTime::createFromFormat('Y-m-d', $check_out_str);
 $today = new DateTime();
 
 if (!$check_in_date || !$check_out_date) {
-    send_json_response(400, ["message" => "Invalid date format. Please use YYYY-MM-DD."]);
-    exit;
+    send_error("Invalid date format. Please use YYYY-MM-DD.");
 }
 
 if ($check_in_date < $today->setTime(0,0,0)) {
-     send_json_response(400, ["message" => "Check-in date must be today or in the future."]);
-    exit;
+     send_error("Check-in date must be today or in the future.");
 }
 
 if ($check_out_date <= $check_in_date) {
-    send_json_response(400, ["message" => "Check-out date must be after check-in date."]);
-    exit;
+    send_error("Check-out date must be after check-in date.");
 }
 
 // Numeric validation
 if ($adults < 0 || $children < 0 || $rooms < 0) {
-    send_json_response(400, ["message" => "Number of adults, children, and rooms cannot be negative."]);
-    exit;
+    send_error("Number of adults, children, and rooms cannot be negative.");
 }
 
 // --- Database Operations ---
@@ -83,9 +76,8 @@ try {
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$property) {
-        send_json_response(404, ["message" => "Property not found."]);
-        exit;
-    }
+    send_error("Property not found.", [], 404);
+}
 
     // --- Fee Configuration ---
     // Ensure fees are loaded and are numeric
@@ -156,14 +148,14 @@ try {
         'total_amount' => round($total_amount, 2)
     ];
 
-    send_json_response(200, ["booking_calculation" => $booking_details]);
+    send_success("Booking calculation completed.", ["booking_calculation" => $booking_details]);
 
 } catch (PDOException $e) {
     error_log("Database error during booking calculation: " . $e->getMessage());
-    send_json_response(500, ["message" => "Database error. Could not calculate booking."]);
+    send_error("Database error. Could not calculate booking.", [], 500);
 } catch (Exception $e) {
     error_log("General error during booking calculation: " . $e->getMessage());
-    send_json_response(500, ["message" => "An unexpected error occurred during booking calculation."]);
+    send_error("An unexpected error occurred during booking calculation.", [], 500);
 }
 ?>
 

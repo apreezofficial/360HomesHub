@@ -12,8 +12,7 @@ $userData = JWTManager::authenticate();
 $user_id = $userData['user_id'] ?? null; // This is the logged-in user's ID
 
 if (!$user_id) {
-    send_json_response(401, ["message" => "Unauthorized. Invalid or missing token."]);
-    exit;
+    send_error("Unauthorized. Invalid or missing token.", [], 401);
 }
 
 // --- Input Validation ---
@@ -21,8 +20,7 @@ $input = json_decode(file_get_contents('php://input'), true);
 $booking_id = $input['booking_id'] ?? null;
 
 if (!$booking_id) {
-    send_json_response(400, ["message" => "Missing required field: booking_id."]);
-    exit;
+    send_error("Missing required field: booking_id.");
 }
 
 // --- Database Operations ---
@@ -41,8 +39,7 @@ try {
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$booking) {
-        send_json_response(404, ["message" => "Booking not found."]);
-        exit;
+        send_error("Booking not found.", [], 404);
     }
 
     // --- Authorization Check ---
@@ -51,8 +48,7 @@ try {
     $is_host = (int)$booking['host_id'] === (int)$user_id;
 
     if (!$is_guest && !$is_host) {
-        send_json_response(403, ["message" => "Forbidden. You are not associated with this booking."]);
-        exit;
+        send_error("Forbidden. You are not associated with this booking.", [], 403);
     }
 
     // --- Prepare Response Data ---
@@ -68,14 +64,14 @@ try {
         'message' => 'Booking status retrieved successfully.'
     ];
 
-    send_json_response(200, $response_data);
+    send_success("Booking status retrieved successfully.", $response_data);
 
 } catch (PDOException $e) {
     error_log("Database error fetching status for booking {$booking_id}: " . $e->getMessage());
-    send_json_response(500, ["message" => "Database error. Could not retrieve booking status."]);
+    send_error("Database error. Could not retrieve booking status.", [], 500);
 } catch (Exception $e) {
     error_log("General error fetching status for booking {$booking_id}: " . $e->getMessage());
-    send_json_response(500, ["message" => "An unexpected error occurred while retrieving booking status."]);
+    send_error("An unexpected error occurred while retrieving booking status.", [], 500);
 }
 ?>
 

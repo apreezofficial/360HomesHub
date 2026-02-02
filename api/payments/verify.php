@@ -30,8 +30,20 @@ if ($gateway === 'paystack') {
 }
 
 if ($status === 'success') {
-    // Here you would typically update the booking status in the database
-    send_success('Payment verified successfully.', ['payment_details' => $payment_data]);
+    try {
+        $pdo = Database::getInstance();
+        $bookingId = $payment_data['metadata']['booking_id'] ?? null;
+        
+        if ($bookingId) {
+            $stmt = $pdo->prepare("UPDATE bookings SET status = 'confirmed' WHERE id = ?");
+            $stmt->execute([$bookingId]);
+            send_success('Payment verified and booking confirmed.', ['payment_details' => $payment_data]);
+        } else {
+            send_success('Payment verified, but booking ID missing from metadata.', ['payment_details' => $payment_data]);
+        }
+    } catch (Exception $e) {
+        send_error('Payment verified but failed to update booking: ' . $e->getMessage(), ['payment_details' => $payment_data], 500);
+    }
 } else {
     send_error('Payment verification failed.', ['payment_details' => $payment_data]);
 }
