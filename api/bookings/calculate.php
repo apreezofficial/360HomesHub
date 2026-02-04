@@ -1,5 +1,6 @@
 <?php
 
+require_once __DIR__ . '/../config.php'; // CORS and common API setup
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
@@ -14,7 +15,6 @@ if (!file_exists(__DIR__ . '/../../config/fees.php')) {
 }
 require_once __DIR__ . '/../../config/fees.php';
 
-header("Content-Type: application/json");
 
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();
@@ -157,59 +157,3 @@ try {
     error_log("General error during booking calculation: " . $e->getMessage());
     send_error("An unexpected error occurred during booking calculation.", [], 500);
 }
-?>
-
-/*
- * Example Request JSON:
- * {
- *   "property_id": 1,
- *   "check_in": "2026-01-25",
- *   "check_out": "2026-01-28",
- *   "adults": 2,
- *   "children": 1,
- *   "rooms": 1
- * }
- */
-
-/*
- * Example Response JSON (Success):
- * {
- *   "booking_calculation": {
- *     "property_id": 1,
- *     "guest_id": 101, // Example guest ID from JWT
- *     "host_id": 5,    // Example host ID from property data
- *     "check_in": "2026-01-25",
- *     "check_out": "2026-01-28",
- *     "nights": 3,
- *     "adults": 2,
- *     "children": 1,
- *     "rooms": 1,
- *     "rent_amount": 300.00, // Assuming property price is 100/night
- *     "caution_fee": 50.00,
- *     "service_fee": 30.00,  // 10% of rent_amount
- *     "tax_amount": 15.00,   // 5% of rent_amount
- *     "total_amount": 395.00
- *   }
- * }
- */
-
-/*
- * Example Response JSON (Error - Missing Fields):
- * {
- *   "message": "Missing required fields. Please provide property_id, check_in, check_out, adults, children, and rooms."
- * }
- */
-
-/*
- * Example Response JSON (Error - Invalid Dates):
- * {
- *   "message": "Check-out date must be after check-in date."
- * }
- */
-
-/*
- * Example Response JSON (Error - Property Not Found):
- * {
- *   "message": "Property not found."
- * }
- */

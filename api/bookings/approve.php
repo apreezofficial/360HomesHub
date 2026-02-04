@@ -1,12 +1,12 @@
 <?php
 
+require_once __DIR__ . '/../config.php'; // CORS and common API setup
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
 
-header("Content-Type: application/json");
 
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();
@@ -96,48 +96,3 @@ try {
     error_log("General error approving booking {$booking_id}: " . $e->getMessage());
     send_error("An unexpected error occurred during booking approval.", [], 500);
 }
-?>
-
-/*
- * Example Request JSON:
- * {
- *   "booking_id": 5
- * }
- */
-
-/*
- * Example Response JSON (Success - 200 OK):
- * {
- *   "id": 5,
- *   "status": "approved",
- *   "message": "Booking approved successfully."
- * }
- */
-
-/*
- * Example Response JSON (Error - Unauthorized):
- * {
- *   "message": "Unauthorized. Invalid or missing token."
- * }
- */
-
-/*
- * Example Response JSON (Error - Forbidden):
- * {
- *   "message": "Forbidden. You are not the host of this booking."
- * }
- */
-
-/*
- * Example Response JSON (Error - Booking Not Found):
- * {
- *   "message": "Booking not found."
- * }
- */
-
-/*
- * Example Response JSON (Error - Already Processed):
- * {
- *   "message": "Booking is not in a pending state. Current status: paid."
- * }
- */

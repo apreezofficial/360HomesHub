@@ -1,16 +1,15 @@
 <?php
 
+require_once __DIR__ . '/../config.php'; // CORS and common API setup
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
 
-header("Content-Type: application/json");
-
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();
-$user_id = $userData['user_id'] ?? null; // This is the logged-in user's ID
+$user_id = $userData['user_id'] ?? null;
 
 if (!$user_id) {
     send_error("Unauthorized. Invalid or missing token.", [], 401);
@@ -48,18 +47,17 @@ try {
     }
 
     // --- Authorization Check ---
-    // Ensure the logged-in user is the host of this booking
     if ((int)$booking['host_id'] !== (int)$user_id) {
         send_error("Forbidden. You are not the host of this booking.", [], 403);
     }
 
     // Ensure booking is in a state that can be rejected (e.g., pending)
     if ($booking['status'] !== 'pending') {
-        send_error("Booking is not in a pending state. Current status: {$booking['status']}.", [], 409);
+        send_error("Booking is not in a pending state. Current status: " . $booking['status'], [], 409);
     }
 
     // Sanitize rejection reason
-    $sanitized_rejection_reason = filter_var($rejection_reason, FILTER_SANITIZE_STRING);
+    $sanitized_rejection_reason = htmlspecialchars(trim($rejection_reason), ENT_QUOTES, 'UTF-8');
     if (empty($sanitized_rejection_reason)) {
         send_error("Rejection reason cannot be empty or contain only invalid characters.");
     }
@@ -77,15 +75,10 @@ try {
         $check_in_date_str = $booking['check_in'];
         $check_out_date_str = $booking['check_out'];
 
-        // Notify Guest (Important)
-        $guest_notification_title = "Booking Rejected";
-        $guest_notification_message = "Your booking request for '{$property_name}' from {$check_in_date_str} to {$check_out_date_str} has been rejected by the host. Reason: {$sanitized_rejection_reason}";
-        sendNotification($guest_id, $guest_notification_title, $guest_notification_message, 'important');
+        sendNotification($guest_id, "Booking Rejected", "Your booking request for '" . $property_name . "' from " . $check_in_date_str . " to " . $check_out_date_str . " has been rejected by the host. Reason: " . $sanitized_rejection_reason, 'important');
 
-        // Notify Admin (Important) - Optional
-        // Assuming admin user ID is 1
-        $admin_user_id = 1; // This might need to be dynamic or configurable
-        sendNotification($admin_user_id, "Booking Rejected", "Booking ID {$booking_id} for property {$booking['property_id']} has been rejected by host {$user_id}. Guest ID: {$guest_id}. Reason: {$sanitized_rejection_reason}", 'important');
+        $admin_user_id = 1;
+        sendNotification($admin_user_id, "Booking Rejected", "Booking ID " . $booking_id . " has been rejected by host " . $user_id . ". Reason: " . $sanitized_rejection_reason, 'important');
 
         // Prepare response data
         $updated_booking_data = [
@@ -101,63 +94,9 @@ try {
     }
 
 } catch (PDOException $e) {
-    error_log("Database error rejecting booking {$booking_id}: " . $e->getMessage());
+    error_log("Database error rejecting booking " . $booking_id . ": " . $e->getMessage());
     send_error("Database error. Could not reject booking.", [], 500);
 } catch (Exception $e) {
-    error_log("General error rejecting booking {$booking_id}: " . $e->getMessage());
+    error_log("General error rejecting booking " . $booking_id . ": " . $e->getMessage());
     send_error("An unexpected error occurred during booking rejection.", [], 500);
 }
-?>
-
-/*
- * Example Request JSON:
- * {
- *   "booking_id": 5,
- *   "rejection_reason": "Property is currently under maintenance."
- * }
- */
-
-/*
- * Example Response JSON (Success - 200 OK):
- * {
- *   "id": 5,
- *   "status": "rejected",
- *   "rejection_reason": "Property is currently under maintenance.",
- *   "message": "Booking rejected successfully."
- * }
- */
-
-/*
- * Example Response JSON (Error - Unauthorized):
- * {
- *   "message": "Unauthorized. Invalid or missing token."
- * }
- */
-
-/*
- * Example Response JSON (Error - Forbidden):
- * {
- *   "message": "Forbidden. You are not the host of this booking."
- * }
- */
-
-/*
- * Example Response JSON (Error - Booking Not Found):
- * {
- *   "message": "Booking not found."
- * }
- */
-
-/*
- * Example Response JSON (Error - Missing Fields):
- * {
- *   "message": "Missing required field: booking_id."
- * }
- */
-
-/*
- * Example Response JSON (Error - Already Processed):
- * {
- *   "message": "Booking is not in a pending state. Current status: paid."
- * }
- */

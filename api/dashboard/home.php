@@ -62,7 +62,7 @@ try {
         SELECT p.id, p.name, p.price, p.price_type, p.city, p.state, p.latitude, p.longitude, pi.image_url
         FROM properties p
         LEFT JOIN (
-            SELECT property_id, MIN(image_url) as image_url
+            SELECT property_id, MIN(media_url) as image_url
             FROM property_images GROUP BY property_id
         ) pi ON p.id = pi.property_id
     ");

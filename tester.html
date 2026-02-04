@@ -337,10 +337,23 @@
             <div class="request-header">
                 <div class="url-bar">
                     <span id="active-method" class="method POST">POST</span>
-                    <span id="active-url">/api/auth/login.php</span>
+                    <input type="text" id="active-url" value="/api/auth/login.php">
                 </div>
                 <button class="btn" onclick="sendRequest()">SEND REQUEST</button>
             </div>
+
+            <style>
+                #active-url {
+                    flex: 1;
+                    background: transparent;
+                    border: none;
+                    color: var(--text-main);
+                    font-family: 'JetBrains Mono', monospace;
+                    font-size: 0.875rem;
+                    outline: none;
+                    width: 100%;
+                }
+            </style>
 
             <div class="payload-grid">
                 <div class="panel-section">
@@ -350,7 +363,7 @@
 }</textarea>
                 </div>
                 <div class="panel-section" id="body-section">
-                    <h3>Body (JSON)</h3>
+                    <h3 id="body-section-title">Body (JSON)</h3>
                     <textarea id="request-body">{
     "email": "john.doe@example.com",
     "password": "password123"
@@ -373,6 +386,7 @@
         let activeEndpoint = null;
 
         const endpoints = [
+            // Auth
             { cat: 'Auth', name: 'Login', path: 'api/auth/login.php', method: 'POST', body: { email: 'john.doe@example.com', password: 'password123' } },
             { cat: 'Auth', name: 'Register Email', path: 'api/auth/register_email.php', method: 'POST', body: { email: 'tester@example.com', password: 'password123' } },
             { cat: 'Auth', name: 'Register Phone', path: 'api/auth/register_phone.php', method: 'POST', body: { phone: '+2348011223344', password: 'password123' } },
@@ -380,46 +394,71 @@
             { cat: 'Auth', name: 'Google Auth', path: 'api/auth/google_auth.php', method: 'POST', body: { id_token: 'GOOGLE_ID_TOKEN' } },
             { cat: 'Auth', name: 'Set Password', path: 'api/auth/set_password.php', method: 'POST', body: { password: 'new_password123' } },
 
+            // Onboarding
             { cat: 'Onboarding', name: 'Set Profile', path: 'api/onboarding/set_profile.php', method: 'POST', body: { first_name: 'John', last_name: 'Doe', bio: 'I am a property enthusiast.' } },
             { cat: 'Onboarding', name: 'Set Location', path: 'api/onboarding/set_location.php', method: 'POST', body: { address: '123 Main St', city: 'Ikeja', state: 'Lagos', country: 'Nigeria' } },
             { cat: 'Onboarding', name: 'Set Role', path: 'api/onboarding/set_role.php', method: 'POST', body: { role: 'guest' } },
-            { cat: 'Onboarding', name: 'Upload Avatar (Paths)', path: 'api/onboarding/upload_avatar.php', method: 'POST', body: { note: 'Requires multipart/form-data for real upload' } },
+            { cat: 'Onboarding', name: 'Upload Avatar', path: 'api/onboarding/upload_avatar.php', method: 'POST', type: 'multipart', params: [{ name: 'avatar', type: 'file' }] },
 
+            // KYC
             { cat: 'KYC', name: 'Status', path: 'api/kyc/kyc_status.php', method: 'GET' },
             { cat: 'KYC', name: 'Start KYC', path: 'api/kyc/start_kyc.php', method: 'POST', body: { country: 'Nigeria', identity_type: 'national_id' } },
-            { cat: 'KYC', name: 'Upload Docs (Paths)', path: 'api/kyc/upload_documents.php', method: 'POST', body: { country: 'Nigeria', identity_type: 'national_id' } },
-            { cat: 'KYC', name: 'Upload Selfie (Paths)', path: 'api/kyc/upload_selfie.php', method: 'POST', body: { note: 'Requires multipart/form-data' } },
+            { cat: 'KYC', name: 'Upload Docs', path: 'api/kyc/upload_documents.php', method: 'POST', type: 'multipart', params: [{ name: 'document', type: 'file' }, { name: 'country', value: 'Nigeria' }, { name: 'identity_type', value: 'national_id' }] },
+            { cat: 'KYC', name: 'Upload Selfie', path: 'api/kyc/upload_selfie.php', method: 'POST', type: 'multipart', params: [{ name: 'selfie', type: 'file' }] },
 
+            // Properties
             { cat: 'Properties', name: 'List All', path: 'api/properties/list.php', method: 'POST', body: { latitude: 6.5244, longitude: 3.3792, page: 1 } },
             { cat: 'Properties', name: 'Search', path: 'api/properties/search.php', method: 'POST', body: { latitude: 6.5244, longitude: 3.3792, keyword: 'Lagos', type: 'house', price_min: 50000, price_max: 2000000 } },
             { cat: 'Properties', name: 'View Details', path: 'api/properties/view.php', method: 'POST', body: { property_id: 1, latitude: 6.5244, longitude: 3.3792 } },
+            { cat: 'Properties', name: 'Calculate Price', path: 'api/properties/calculate_price.php', method: 'POST', body: { property_id: 1, check_in: '2026-02-01', check_out: '2026-02-05', guests: 2 } },
 
-            { cat: 'Bookings', name: 'Calculate Price', path: 'api/bookings/calculate.php', method: 'POST', body: { property_id: 1, check_in: '2026-02-01', check_out: '2026-02-05', adults: 2, children: 1, rooms: 1 } },
+            // Bookings
+            { cat: 'Bookings', name: 'Calculate (Booking)', path: 'api/bookings/calculate.php', method: 'POST', body: { property_id: 1, check_in: '2026-02-01', check_out: '2026-02-05', adults: 2, children: 1, rooms: 1 } },
             { cat: 'Bookings', name: 'Create Booking', path: 'api/bookings/create.php', method: 'POST', body: { property_id: 1, check_in: '2026-02-01', check_out: '2026-02-05', adults: 2, children: 1, rooms: 1 } },
             { cat: 'Bookings', name: 'Status', path: 'api/bookings/status.php', method: 'GET' },
             { cat: 'Bookings', name: 'Approve', path: 'api/bookings/approve.php', method: 'POST', body: { booking_id: 1 } },
             { cat: 'Bookings', name: 'Reject', path: 'api/bookings/reject.php', method: 'POST', body: { booking_id: 1, reason: 'Property not available' } },
+            { cat: 'Bookings', name: 'Checkout Init', path: 'api/bookings/checkout.php', method: 'POST', body: { booking_id: 1 } },
 
+            // Dashboard
             { cat: 'Dashboard', name: 'Home', path: 'api/dashboard/home.php', method: 'POST', body: { latitude: 6.5244, longitude: 3.3792 } },
-            { cat: 'Messages', name: 'Unread Count', path: 'api/messages/unread_count.php', method: 'GET' },
-            { cat: 'Notifications', name: 'Unread Count', path: 'api/notifications/unread_count.php', method: 'GET' },
 
+            // Messages & Notifications
+            { cat: 'Messages', name: 'Unread Count', path: 'api/messages/unread_count.php', method: 'GET' },
+            { cat: 'Messages', name: 'List All', path: 'api/messages/list.php', method: 'GET' },
+            { cat: 'Messages', name: 'View Msg (ID)', path: 'api/messages/view.php?message_id=1', method: 'GET' },
+            { cat: 'Messages', name: 'View Conversation', path: 'api/messages/view.php?other_user_id=2', method: 'GET' },
+            { cat: 'Notifications', name: 'Unread Count', path: 'api/notifications/unread_count.php', method: 'GET' },
+            { cat: 'Notifications', name: 'Notify', path: 'api/notifications/notify.php', method: 'POST', body: { user_id: 1, title: 'Test', message: 'Hello' } },
+
+            // Payments
             { cat: 'Payments', name: 'Checkout (Paystack)', path: 'api/payments/checkout.php', method: 'POST', body: { amount: 5000, gateway: 'paystack', booking_id: 101 } },
             { cat: 'Payments', name: 'Checkout (Flutterwave)', path: 'api/payments/checkout.php', method: 'POST', body: { amount: 5000, gateway: 'flutterwave', booking_id: 101 } },
-            { cat: 'Payments', name: 'Verify Payment', path: 'api/payments/verify.php?gateway=paystack&reference=REF123', method: 'GET' },
+            { cat: 'Payments', name: 'Verify (Paystack)', path: 'api/payments/verify.php?gateway=paystack&reference=YOUR_REF_HERE', method: 'GET' },
+            { cat: 'Payments', name: 'Verify (Flutterwave)', path: 'api/payments/verify.php?gateway=flutterwave&transaction_id=YOUR_ID_HERE', method: 'GET' },
+            { cat: 'Payments', name: 'Webhook', path: 'api/payments/webhook.php', method: 'POST', body: { event: 'charge.success', data: { reference: 'REF123', status: 'success' } } },
 
+            // Host Onboarding (Properties)
             { cat: 'Host Onboarding', name: '1. Init Listing', path: 'api/properties/onboarding/init_listing.php', method: 'POST', body: { country: 'Nigeria', address: '123 Lekki Phase 1', apartment_suite: 'Suite 4', city: 'Lekki', state: 'Lagos', zip_code: '100001', latitude: 6.4483, longitude: 3.4767 } },
             { cat: 'Host Onboarding', name: '2. Update Details', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 2, type: 'apartment', space_type: 'private', guests_max: 2, bedrooms: 1, bathrooms: 1, beds: 1 } },
-            { cat: 'Host Onboarding', name: '3. Amenities & Rules', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 3, amenities: ["wifi", "air conditioning", "fan", "couch"], extra_rules: ["no smoking", "no pets"], check_in_time: "14:00", check_out_time: "11:00", age_restriction: 1 } },
-            { cat: 'Host Onboarding', name: '4. Upload Media', path: 'api/properties/onboarding/upload_media.php', method: 'POST', body: { property_id: 1, note: 'Use multipart/form-data' } },
+            { cat: 'Host Onboarding', name: '3. Amenities & Rules', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 3, amenities: ["wifi", "air conditioning"], extra_rules: ["no smoking"], check_in_time: "14:00", check_out_time: "11:00", age_restriction: 1 } },
+            { cat: 'Host Onboarding', name: '4. Upload Media', path: 'api/properties/onboarding/upload_media.php', method: 'POST', type: 'multipart', params: [{ name: 'property_id', value: 1 }, { name: 'images[]', type: 'file', multiple: true }, { name: 'videos[]', type: 'file', multiple: true }] },
             { cat: 'Host Onboarding', name: '5. Pricing Preview', path: 'api/properties/onboarding/pricing_preview.php', method: 'POST', body: { price: 25000 } },
             { cat: 'Host Onboarding', name: '6. Publish', path: 'api/properties/onboarding/update_listing.php', method: 'POST', body: { property_id: 1, onboarding_step: 6, status: 'published', price: 25000, cancellation_policy: 'moderate', instant_booking: 1 } },
 
+            // Admin
             { cat: 'Admin', name: 'Login', path: 'api/admin/login.php', method: 'POST', body: { email: 'admin@example.com', password: 'adminpassword' } },
             { cat: 'Admin', name: 'Properties List', path: 'api/admin/properties.php', method: 'GET' },
+            { cat: 'Admin', name: 'Property Details', path: 'api/admin/property_details.php?id=1', method: 'GET' },
+            { cat: 'Admin', name: 'Transactions', path: 'api/admin/transactions.php', method: 'GET' },
+            { cat: 'Admin', name: 'Stats', path: 'api/admin/stats.php', method: 'GET' },
+            { cat: 'Admin', name: 'Users', path: 'api/admin/users.php', method: 'GET' },
+            { cat: 'Admin', name: 'Create User', path: 'api/admin/create_user.php', method: 'POST', body: { email: 'newuser@example.com', password: 'password', role: 'user' } },
             { cat: 'Admin', name: 'KYC List', path: 'api/admin/kyc_list.php', method: 'GET' },
             { cat: 'Admin', name: 'Approve KYC', path: 'api/admin/approve_kyc.php', method: 'POST', body: { kyc_id: 1 } },
-            { cat: 'Admin', name: 'Reject KYC', path: 'api/admin/reject_kyc.php', method: 'POST', body: { kyc_id: 1, admin_note: 'ID is blurry' } }
+            { cat: 'Admin', name: 'Reject KYC', path: 'api/admin/reject_kyc.php', method: 'POST', body: { kyc_id: 1, admin_note: 'ID is blurry' } },
+            { cat: 'Admin', name: 'Send Message', path: 'api/admin/send_message.php', method: 'POST', body: { user_id: 1, message: 'Hello from admin' } },
+            { cat: 'Admin', name: 'Send Notification', path: 'api/admin/send_notification.php', method: 'POST', body: { user_id: 1, title: 'Alert', body: 'System update' } }
         ];
 
         function init() {
@@ -461,16 +500,75 @@
 
             document.getElementById('active-method').textContent = ep.method;
             document.getElementById('active-method').className = `method ${ep.method}`;
-            document.getElementById('active-url').textContent = ep.path;
+            document.getElementById('active-url').value = ep.path;
 
-            if (ep.body) {
+            if (ep.type === 'multipart') {
+                // ... (rest of the function remains same, cutting for brevity if possible, but tool requires contiguous block)
                 document.getElementById('body-section').style.display = 'block';
+                document.getElementById('body-section-title').textContent = 'Multipart/Form-Data Inputs';
+
+                // Clear existing inputs
+                const container = document.getElementById('multipart-container');
+                if (!container) {
+                    // Create if not exists
+                    const div = document.createElement('div');
+                    div.id = 'multipart-container';
+                    document.getElementById('body-section').appendChild(div);
+                }
+                const mpContainer = document.getElementById('multipart-container');
+                mpContainer.innerHTML = '';
+                document.getElementById('request-body').style.display = 'none'; // Hide JSON area
+
+                // Render inputs
+                ep.params.forEach(p => {
+                    const wrap = document.createElement('div');
+                    wrap.style.marginBottom = '10px';
+                    const label = document.createElement('label');
+                    label.textContent = p.name;
+                    label.style.display = 'block';
+                    label.style.marginBottom = '5px';
+                    label.style.fontSize = '0.75rem';
+                    label.style.color = 'var(--text-dim)';
+
+                    let input;
+                    if (p.type === 'file') {
+                        input = document.createElement('input');
+                        input.type = 'file';
+                        input.name = p.name;
+                        if (p.multiple) input.multiple = true;
+                        input.style.color = 'var(--text-main)';
+                    } else {
+                        input = document.createElement('input');
+                        input.type = 'text';
+                        input.name = p.name;
+                        input.value = p.value || '';
+                        input.style.width = '100%';
+                        input.style.padding = '5px';
+                        input.style.background = 'var(--bg)';
+                        input.style.border = '1px solid var(--border)';
+                        input.style.color = 'var(--text-main)';
+                    }
+                    wrap.appendChild(label);
+                    wrap.appendChild(input);
+                    mpContainer.appendChild(wrap);
+                });
+
+            } else if (ep.body) {
+                document.getElementById('body-section').style.display = 'block';
+                document.getElementById('body-section-title').textContent = 'Body (JSON)';
+                document.getElementById('request-body').style.display = 'block';
+                if (document.getElementById('multipart-container')) document.getElementById('multipart-container').innerHTML = '';
                 document.getElementById('request-body').value = JSON.stringify(ep.body, null, 4);
             } else {
                 document.getElementById('body-section').style.display = 'none';
             }
 
-            const headers = { "Content-Type": "application/json" };
+            const headers = {};
+            if (ep.type !== 'multipart') {
+                headers["Content-Type"] = "application/json";
+            }
+            // Note: Content-Type for multipart is set automatically by browser with boundary
+
             const token = localStorage.getItem('jwt_token');
             if (token) headers["Authorization"] = `Bearer ${token}`;
             document.getElementById('request-headers').value = JSON.stringify(headers, null, 4);
@@ -481,24 +579,60 @@
             const statusBadge = document.getElementById('response-status');
             const responseBody = document.getElementById('response-body');
 
+            // Get URL from the input field
+            const url = document.getElementById('active-url').value;
+
             btn.textContent = 'SENDING...';
             btn.disabled = true;
 
             try {
                 const headers = JSON.parse(document.getElementById('request-headers').value);
-                const body = activeEndpoint.method === 'POST' ? document.getElementById('request-body').value : null;
+                let body = null;
 
-                const res = await fetch(activeEndpoint.path, {
+                if (activeEndpoint.method === 'POST') {
+                    if (activeEndpoint.type === 'multipart') {
+                        body = new FormData();
+                        const inputs = document.getElementById('multipart-container').querySelectorAll('input');
+                        inputs.forEach(inp => {
+                            if (inp.type === 'file') {
+                                if (inp.files.length > 0) {
+                                    if (inp.multiple) {
+                                        for (let i = 0; i < inp.files.length; i++) {
+                                            body.append(inp.name, inp.files[i]);
+                                        }
+                                    } else {
+                                        body.append(inp.name, inp.files[0]);
+                                    }
+                                }
+                            } else {
+                                body.append(inp.name, inp.value);
+                            }
+                        });
+                        // Remove Content-Type header so browser sets it with boundary
+                        delete headers['Content-Type'];
+                    } else {
+                        body = document.getElementById('request-body').value;
+                    }
+                }
+
+                const res = await fetch(url, {
                     method: activeEndpoint.method,
                     headers: headers,
                     body: body
                 });
 
-                const data = await res.json();
+                let data;
+                const contentType = res.headers.get("content-type");
+                if (contentType && contentType.indexOf("application/json") !== -1) {
+                    data = await res.json();
+                    responseBody.textContent = JSON.stringify(data, null, 4);
+                } else {
+                    data = await res.text();
+                    responseBody.textContent = data;
+                }
 
                 statusBadge.textContent = `${res.status} ${res.statusText}`;
                 statusBadge.className = `status-badge ${res.ok ? 'success' : 'error'}`;
-                responseBody.textContent = JSON.stringify(data, null, 4);
 
                 // Auto-save token if login successful
                 if (activeEndpoint.path.includes('login') && data.token) {

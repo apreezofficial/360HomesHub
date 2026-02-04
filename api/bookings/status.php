@@ -1,15 +1,14 @@
 <?php
 
+require_once __DIR__ . '/../config.php'; // CORS and common API setup
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 
-header("Content-Type: application/json");
-
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();
-$user_id = $userData['user_id'] ?? null; // This is the logged-in user's ID
+$user_id = $userData['user_id'] ?? null;
 
 if (!$user_id) {
     send_error("Unauthorized. Invalid or missing token.", [], 401);
@@ -17,7 +16,7 @@ if (!$user_id) {
 
 // --- Input Validation ---
 $input = json_decode(file_get_contents('php://input'), true);
-$booking_id = $input['booking_id'] ?? null;
+$booking_id = $input['booking_id'] ?? $_GET['booking_id'] ?? null;
 
 if (!$booking_id) {
     send_error("Missing required field: booking_id.");
@@ -27,7 +26,7 @@ if (!$booking_id) {
 try {
     $pdo = get_db_connection(); // Get database connection
 
-    // Fetch booking details including guest_id and host_id
+    // Fetch booking details
     $stmt = $pdo->prepare("
         SELECT b.id, b.status, b.guest_id, b.host_id, p.name as property_name, b.check_in, b.check_out
         FROM bookings b
@@ -43,7 +42,6 @@ try {
     }
 
     // --- Authorization Check ---
-    // Ensure the logged-in user is either the guest or the host of this booking
     $is_guest = (int)$booking['guest_id'] === (int)$user_id;
     $is_host = (int)$booking['host_id'] === (int)$user_id;
 
@@ -51,8 +49,7 @@ try {
         send_error("Forbidden. You are not associated with this booking.", [], 403);
     }
 
-    // --- Prepare Response Data ---
-    // Return essential booking details along with its status
+    // Prepare Response Data
     $response_data = [
         'booking_id' => (int)$booking['id'],
         'property_name' => $booking['property_name'],
@@ -67,66 +64,9 @@ try {
     send_success("Booking status retrieved successfully.", $response_data);
 
 } catch (PDOException $e) {
-    error_log("Database error fetching status for booking {$booking_id}: " . $e->getMessage());
+    error_log("Database error fetching status for booking " . $booking_id . ": " . $e->getMessage());
     send_error("Database error. Could not retrieve booking status.", [], 500);
 } catch (Exception $e) {
-    error_log("General error fetching status for booking {$booking_id}: " . $e->getMessage());
+    error_log("General error fetching status for booking " . $booking_id . ": " . $e->getMessage());
     send_error("An unexpected error occurred while retrieving booking status.", [], 500);
 }
-?>
-
-/*
- * Example Request JSON:
- * {
- *   "booking_id": 5
- * }
- */
-
-/*
- * Example Response JSON (Success - 200 OK - as Guest):
- * {
- *   "booking_id": 5,
- *   "property_name": "Cozy Apartment Downtown",
- *   "check_in": "2026-01-25",
- *   "check_out": "2026-01-28",
- *   "status": "approved", // e.g., 'pending', 'approved', 'rejected', 'paid'
- *   "guest_id": 101,
- *   "host_id": 5,
- *   "message": "Booking status retrieved successfully."
- * }
- */
-
-/*
- * Example Response JSON (Success - 200 OK - as Host):
- * {
- *   "booking_id": 5,
- *   "property_name": "Cozy Apartment Downtown",
- *   "check_in": "2026-01-25",
- *   "check_out": "2026-01-28",
- *   "status": "paid",
- *   "guest_id": 101,
- *   "host_id": 5,
- *   "message": "Booking status retrieved successfully."
- * }
- */
-
-/*
- * Example Response JSON (Error - Unauthorized):
- * {
- *   "message": "Unauthorized. Invalid or missing token."
- * }
- */
-
-/*
- * Example Response JSON (Error - Forbidden):
- * {
- *   "message": "Forbidden. You are not associated with this booking."
- * }
- */
-
-/*
- * Example Response JSON (Error - Booking Not Found):
- * {
- *   "message": "Booking not found."
- * }
- */

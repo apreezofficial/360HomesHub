@@ -1,16 +1,25 @@
 <?php
-// Suppress PHP errors/warnings in output
-error_reporting(0);
-ini_set('display_errors', 0);
 
-// Always return JSON
-header('Content-Type: application/json');
+require_once __DIR__ . '/../config.php'; // CORS and common API setup
+
+// Suppress PHP errors/warnings in output (Optional, keeping enabled for now for production-like behavior, but usually good to log)
+// error_reporting(E_ALL);
+// ini_set('display_errors', 0);
+
 
 require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
+
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
+
+// Load payment configuration fees
+if (!file_exists(__DIR__ . '/../../config/fees.php')) {
+    error_log("Config file config/fees.php not found.");
+    send_error("Configuration error: Fees configuration not found.", [], 500);
+}
+require_once __DIR__ . '/../../config/fees.php';
 
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();
@@ -187,63 +196,3 @@ try {
     error_log("General error during booking creation: " . $e->getMessage());
     send_error("An unexpected error occurred during booking creation.", [], 500);
 }
-?>
-
-/*
- * Example Request JSON:
- * {
- *   "property_id": 1,
- *   "check_in": "2026-01-25",
- *   "check_out": "2026-01-28",
- *   "adults": 2,
- *   "children": 1,
- *   "rooms": 1
- * }
- */
-
-/*
- * Example Response JSON (Success - 201 Created):
- * {
- *   "message": "Booking request created successfully.",
- *   "booking": {
- *     "id": 5, // Newly created booking ID
- *     "property_id": 1,
- *     "guest_id": 101, // Authenticated user's ID
- *     "host_id": 5,
- *     "check_in": "2026-01-25",
- *     "check_out": "2026-01-28",
- *     "nights": 3,
- *     "adults": 2,
- *     "children": 1,
- *     "rooms": 1,
- *     "rent_amount": 300.00,
- *     "caution_fee": 50.00,
- *     "service_fee": 30.00,
- *     "tax_amount": 15.00,
- *     "total_amount": 395.00,
- *     "status": "pending",
- *     "created_at": "2026-01-20 15:45:00" // Example timestamp
- *   }
- * }
- */
-
-/*
- * Example Response JSON (Error - Missing Fields):
- * {
- *   "message": "Missing required fields. Please provide property_id, check_in, check_out, adults, children, and rooms."
- * }
- */
-
-/*
- * Example Response JSON (Error - Property Not Found):
- * {
- *   "message": "Property not found."
- * }
- */
-
-/*
- * Example Response JSON (Error - Invalid Dates):
- * {
- *   "message": "Check-out date must be after check-in date."
- * }
- */
