@@ -65,7 +65,7 @@ The API returns JSON responses with the following structure:
 | `list.php` | POST | Yes | List properties sorted by distance. | `latitude`, `longitude`, `page` |
 | `details.php` | GET | No | Get full details of a property. | `id` (query param) |
 | `amenities.php` | GET | No | List available amenities. | - |
-| `calculate_price.php` | POST | No | Calculate total price for dates. | `property_id`, `check_in`, `check_out` |
+| `calculate_price.php` | POST | No | Calculate total price for dates. | `property_id`, `start_date`, `end_date` |
 
 #### Host Property Onboarding (`/api/properties/onboarding/`)
 *Requires 'host' role*
@@ -88,7 +88,14 @@ The API returns JSON responses with the following structure:
 | `reject.php` | POST | Reject a booking (Host only). | `booking_id` |
 | `checkout.php` | POST | Initialize payment for booking. | `booking_id` |
 
-### 5. Messages & Notifications (`/api/messages/`, `/api/notifications/`)
+### 5. Dashboard (`/api/dashboard/`)
+*Requires Authentication*
+
+| Endpoint | Method | Description | Parameters (JSON) |
+| :--- | :--- | :--- | :--- |
+| `home.php` | POST | Personalized home stats & nearby list. | `latitude`, `longitude` |
+
+### 6. Messages & Notifications (`/api/messages/`, `/api/notifications/`)
 *Requires Authentication*
 
 | Endpoint | Method | Description |

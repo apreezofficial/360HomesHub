@@ -87,7 +87,7 @@ Most endpoints require a JWT token in the `Authorization` header.
 | `/list` | POST | Opt | List properties by distance. | `latitude`, `longitude`, `page` |
 | `/details` | GET | None | Full property details. | `id` (Query) |
 | `/amenities` | GET | None | Get available amenities list. | - |
-| `/calculate_price`| POST | None | Pricing for specific dates. | `property_id`, `check_in`, `check_out` |
+| `/calculate_price`| POST | None | Pricing for specific dates. | `property_id`, `start_date`, `end_date` |
 
 ### Host Property Onboarding (`/api/properties/onboarding/`)
 *Requires JWT & 'host' role*
@@ -114,7 +114,16 @@ Most endpoints require a JWT token in the `Authorization` header.
 
 ---
 
-## 5. KYC Endpoints (`/api/kyc/`)
+## 5. Dashboard Endpoints (`/api/dashboard/`)
+*Requires JWT*
+
+| Endpoint | Method | Description | Parameters |
+| :--- | :--- | :--- | :--- |
+| `/home` | POST | Get personalized dashboard stats & nearby properties. | `latitude`, `longitude` |
+
+---
+
+## 6. KYC Endpoints (`/api/kyc/`)
 *Requires JWT*
 
 | Endpoint | Method | Description |
