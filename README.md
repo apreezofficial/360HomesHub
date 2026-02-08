@@ -42,317 +42,129 @@ The following constants must be defined in `config/env.php`:
 - `PAYSTACK_SECRET_KEY`: For Paystack transaction verification
 - `FLUTTERWAVE_SECRET_KEY`: For Flutterwave transaction verification
 
-# 360HomesHub API
+# 360HomesHub API Reference
 
-## Overview
-A high-performance RESTful API backend built with PHP 8.1, utilizing JWT for secure authentication and a custom-built utility architecture for database and file management.
+The 360HomesHub API is a RESTful interface for managing real estate listings, bookings, user identity, and payments.
 
-## Features
-- **Firebase JWT**: Stateless user authentication and authorization
-- **PDO Singleton**: Optimized database connection management
-- **Custom Upload Manager**: Secure handling of identity documents and property media
-- **Geolocation Utility**: Haversine formula implementation for proximity-based property search
-
-## API Documentation
-### Base URL
+## Base URL
 `http://localhost/360HomesHub/api`
 
-### Endpoints
-
-#### POST /auth/register_email
-**Request**:
-```json
-{
-  "email": "user@example.com",
-  "password": "StrongPassword123"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "Registration successful. OTP sent to your email for verification.",
-  "data": { "user_id": 1 }
-}
-```
-**Errors**:
-- 400: Email and password are required
-- 409: Email already registered
-
-#### POST /auth/verify_otp
-**Request**:
-```json
-{
-  "user_id": 1,
-  "otp_code": "123456"
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "OTP verified successfully.",
-  "data": { 
-    "token": "JWT_TOKEN_HERE",
-    "onboarding_step": "profile" 
-  }
-}
-```
-**Errors**:
-- 400: Invalid or expired OTP
-
-#### POST /properties/list
-**Request**:
-```json
-{
-  "latitude": 6.5244,
-  "longitude": 3.3792,
-  "page": 1
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "properties": [
-      {
-        "id": 1,
-        "name": "Luxury Studio",
-        "distance": 2.5,
-        "price": 50000.00
-      }
-    ]
-  }
-}
-```
-
-#### POST /bookings/calculate
-**Request**:
-```json
-{
-  "property_id": 1,
-  "check_in": "2024-12-01",
-  "check_out": "2024-12-05",
-  "adults": 2,
-  "children": 1,
-  "rooms": 1
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "data": {
-    "booking_calculation": {
-      "rent_amount": 200000.00,
-      "caution_fee": 5000.00,
-      "service_fee": 20000.00,
-      "tax_amount": 15000.00,
-      "total_amount": 240000.00
-    }
-  }
-}
-```
-
-#### POST /admin/approve_kyc
-**Request**:
-```json
-{
-  "kyc_id": 1
-}
-```
-**Response**:
-```json
-{
-  "success": true,
-  "message": "KYC application approved and user verified.",
-  "data": { "kyc_id": 1, "user_id": 5 }
-}
-```
-**Errors**:
-- 403: Admin privileges required
+## Authentication
+Most endpoints require a JWT token in the `Authorization` header.
+`Authorization: Bearer <your_token>`
 
 ---
 
-## Complete API Reference
+## 1. Authentication Endpoints (`/api/auth/`)
 
-### Authentication Endpoints
-
-#### POST /auth/register_email
-Register a new user with email and password.
-- **Auth**: None
-- **Body**: `{ "email": "user@example.com", "password": "Pass123!" }`
-- **Success**: `{ "success": true, "message": "Registration successful. OTP sent to your email for verification.", "data": { "user_id": 1 } }`
-
-#### POST /auth/register_phone
-Register with phone number.
-- **Auth**: None  
-- **Body**: `{ "phone": "+2349012345678", "password": "Pass123!" }`
-
-#### POST /auth/verify_otp
-Verify OTP sent to email/phone.
-- **Auth**: None
-- **Body**: `{ "user_id": 1, "otp_code": "123456" }`
-- **Success**: Returns JWT token
-
-#### POST /auth/login
-Login with email/phone and password.
-- **Auth**: None
-- **Body**: `{ "email": "user@example.com", "password": "Pass123!" }`
-- **Success**: Returns JWT token
+| Endpoint | Method | Auth | Description | Parameters |
+| :--- | :--- | :--- | :--- | :--- |
+| `/register_email` | POST | None | Register with email. | `email`, `password` |
+| `/register_phone` | POST | None | Register with phone number. | `phone`, `password` |
+| `/verify_otp` | POST | None | Verify registration OTP. | `user_id`, `otp_code` |
+| `/login` | POST | None | Login with credentials. | `email`/`phone`, `password` |
+| `/set_password` | POST | None | Set/Reset user password. | `user_id`, `password` |
+| `/google_auth` | POST | None | Google OAuth login. | `google_token` |
 
 ---
 
-### Onboarding Endpoints  
+## 2. Onboarding Endpoints (`/api/onboarding/`)
+*Requires JWT*
 
-#### POST /onboarding/set_profile
-Set user profile information.
-- **Auth**: JWT required
-- **Body**: `{ "first_name": "John", "last_name": "Doe", "bio": "..." }`
-
-#### POST /onboarding/set_location
-Set user location.
-- **Auth**: JWT required
-- **Body**: `{ "address": "...", "city": "Lagos", "state": "Lagos", "country": "Nigeria", "latitude": 6.5244, "longitude": 3.3792 }`
-
-#### POST /onboarding/upload_avatar
-Upload user avatar.
-- **Auth**: JWT required
-- **Body**: Multipart form with `avatar` file
-
-#### POST /onboarding/set_role
-Select user role (guest/host).
-- **Auth**: JWT required
-- **Body**: `{ "role": "host" }`
+| Endpoint | Method | Description | Parameters |
+| :--- | :--- | :--- | :--- |
+| `/set_profile` | POST | Set basic profile info. | `first_name`, `last_name`, `bio` |
+| `/set_location` | POST | Set user home location. | `address`, `city`, `state`, `latitude`, `longitude` |
+| `/set_role` | POST | Define user as 'guest' or 'host'. | `role` |
+| `/upload_avatar` | POST | Upload profile picture. | `avatar` (File) |
 
 ---
 
-### KYC Endpoints
+## 3. Property Endpoints (`/api/properties/`)
 
-#### POST /kyc/start_kyc
-Initiate KYC verification.
-- **Auth**: JWT required
-- **Body**: `{ "country": "Nigeria", "identity_type": "passport" }`
+| Endpoint | Method | Auth | Description | Parameters |
+| :--- | :--- | :--- | :--- | :--- |
+| `/list` | POST | Opt | List properties by distance. | `latitude`, `longitude`, `page` |
+| `/details` | GET | None | Full property details. | `id` (Query) |
+| `/amenities` | GET | None | Get available amenities list. | - |
+| `/calculate_price`| POST | None | Pricing for specific dates. | `property_id`, `check_in`, `check_out` |
 
-#### POST /kyc/upload_documents
-Upload ID documents.
-- **Auth**: JWT required
-- **Body**: Multipart form with `id_front` and `id_back` files
+### Host Property Onboarding (`/api/properties/onboarding/`)
+*Requires JWT & 'host' role*
 
-#### POST /kyc/upload_selfie
-Upload selfie for verification.
-- **Auth**: JWT required
-- **Body**: Multipart form with `selfie` file
-- **Success**: Marks onboarding as completed
-
----
-
-### Property Endpoints
-
-#### GET /properties/list
-List properties near a location.
-- **Auth**: Optional JWT
-- **Body**: `{ "latitude": 6.5244, "longitude": 3.3792, "page": 1 }`
-- **Success**: Returns paginated list of properties with distance
-
-#### GET /properties/amenities
-Get list of all available amenities.
-- **Auth**: None
-- **Success**: `{ "success": true, "message": "Amenities retrieved.", "data": { "amenities": [{"id": 1, "name": "WiFi"}, ...] } }`
-
-#### GET /properties/rules
-Get house rules.
-- **Auth**: None
-- **Success**: `{ "success": true, "message": "House rules retrieved.", "data": { "house_rules": ["No smoking inside the property.", ...] } }`
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/init_listing` | POST | Start a new property listing. |
+| `/update_listing` | POST | Update details (step-by-step). |
+| `/pricing_preview`| POST | Calculate expected earnings. |
 
 ---
 
-### Booking Endpoints
+## 4. Booking Endpoints (`/api/bookings/`)
+*Requires JWT*
 
-#### POST /bookings/calculate
-Calculate booking costs.
-- **Auth**: JWT required
-- **Body**: `{ "property_id": 1, "check_in": "2024-12-01", "check_out": "2024-12-05", "adults": 2, "children": 1, "rooms": 1 }`
-- **Success**: Returns breakdown of rent, fees, taxes, and total amount
-
-#### POST /bookings/create
-Create a new booking request.
-- **Auth**: JWT required (guest)
-- **Body**: Same as `/bookings/calculate`
-- **Success**: Creates booking with status "pending"
-
-#### POST /bookings/approve
-Approve a booking (host only).
-- **Auth**: JWT required (host)
-- **Body**: `{ "booking_id": 5 }`
-- **Success**: Updates booking status to "approved"
-
-#### POST /bookings/reject
-Reject a booking (host only).
-- **Auth**: JWT required (host)
-- **Body**: `{ "booking_id": 5, "rejection_reason": "Property under maintenance" }`
-- **Success**: Updates booking status to "rejected"
-
-#### POST /bookings/checkout
-Initiate payment for approved booking.
-- **Auth**: JWT required (guest)
-- **Body**: `{ "booking_id": 5 }`
-- **Success**: Returns payment gateway checkout URL
-
-#### POST /bookings/status
-Get booking status.
-- **Auth**: JWT required (guest or host)
-- **Body**: `{ "booking_id": 5 }`
-- **Success**: Returns booking details and current status
+| Endpoint | Method | Description | Parameters |
+| :--- | :--- | :--- | :--- |
+| `/create` | POST | Create a new booking request. | `property_id`, `check_in`, `check_out`, `adults`, `children`, `rooms` |
+| `/calculate` | POST | Breakdown of costs & fees. | `property_id`, `check_in`, `check_out` |
+| `/status` | GET | Current booking status. | `id` (Query) |
+| `/approve` | POST | Approve (Host only). | `booking_id` |
+| `/reject` | POST | Reject (Host only). | `booking_id`, `rejection_reason` |
+| `/checkout` | POST | Get payment link. | `booking_id` |
 
 ---
 
-### Admin Endpoints
+## 5. KYC Endpoints (`/api/kyc/`)
+*Requires JWT*
 
-#### POST /admin/login
-Admin login.
-- **Auth**: None
-- **Body**: `{ "email": "admin@360homeshub.com", "password": "AdminPass123!" }`
-- **Success**: Returns JWT token (admin role required)
-
-#### POST /admin/create_user
-Create a new user (admin only).
-- **Auth**: JWT required (admin)
-- **Body**: `{ "email": "user@example.com", "password": "Pass123!", "first_name": "John", "last_name": "Doe", "role": "guest" }`
-
-#### POST /admin/create_property
-Create a property (admin only).
-- **Auth**: JWT required (admin)
-- **Body**: Property details including name, type, price, location, amenities
-
-#### GET /admin/users
-List all users (admin only).
-- **Auth**: JWT required (admin)
-
-#### GET /admin/properties
-List all properties (admin only).
-- **Auth**: JWT required (admin)
-
-#### POST /admin/approve_kyc
-Approve KYC application.
-- **Auth**: JWT required (admin)
-- **Body**: `{ "kyc_id": 1 }`
-
-#### POST /admin/reject_kyc
-Reject KYC application.
-- **Auth**: JWT required (admin)
-- **Body**: `{ "kyc_id": 1, "reason": "Documents unclear" }`
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/start_kyc` | POST | Initiate verification. |
+| `/upload_documents`| POST | Upload ID front/back. |
+| `/upload_selfie` | POST | Final selfie verification. |
+| `/kyc_status` | GET | Check verification progress.|
 
 ---
 
-### Payment Webhook
+## 6. Communication & Notifications (`/api/messages/`, `/api/notifications/`)
+*Requires JWT*
 
-#### POST /payments/webhook
-Payment gateway webhook (Paystack/Flutterwave).
-- **Auth**: Gateway signature verification
-- **Body**: Payment event data from gateway
-- **Success**: Updates booking status to "paid" and credits host wallet
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/messages/list` | GET | Get user conversations. |
+| `/messages/view` | GET | View chat history. |
+| `/messages/unread_count`| GET | Global unread chat count. |
+| `/notifications/unread_count`| GET | Unread alerts count. |
+
+---
+
+## 7. Payment Endpoints (`/api/payments/`)
+
+| Endpoint | Method | Auth | Description |
+| :--- | :--- | :--- | :--- |
+| `/checkout` | POST | JWT | Create transaction session. |
+| `/verify` | POST | JWT | Manually verify transaction. |
+| `/webhook` | POST | None | Gateway callback listener. |
+
+---
+
+## 8. Admin Endpoints (`/api/admin/`)
+*Requires JWT & 'admin' role*
+
+| Endpoint | Method | Description |
+| :--- | :--- | :--- |
+| `/login` | POST | Admin login. |
+| `/stats` | GET | Platform overview stats. |
+| `/users` | GET | View all registered users. |
+| `/properties` | GET | View all property listings. |
+| `/kyc_list` | GET | List pending verifications. |
+| `/approve_kyc` | POST | Verify a user account. |
+| `/reject_kyc` | POST | Deny verification. |
+| `/transactions` | GET | Platform-wide payments. |
+| `/send_message` | POST | Official platform message. |
+| `/send_notification`| POST | Push system alert. |
+| `/update_property` | POST | Modify any listing. |
+| `/property_details` | GET | Full admin view of property.|
 
 
 ## Technologies Used
