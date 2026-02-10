@@ -71,7 +71,7 @@ try {
     }
 
     // Fetch property images
-    $img_stmt = $pdo->prepare("SELECT image_url FROM property_images WHERE property_id = ?");
+    $img_stmt = $pdo->prepare("SELECT media_url FROM property_images WHERE property_id = ? AND media_type = 'image'");
     $img_stmt->execute([$property_id]);
     $images = $img_stmt->fetchAll(PDO::FETCH_COLUMN);
 

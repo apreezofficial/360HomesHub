@@ -98,23 +98,18 @@ try {
     }
     // If somehow nights is still 0, it means check_out is not after check_in, already caught by validation.
 
-    // 2. Calculate rent amount
-    // Assuming 'price' in properties table is per night.
-    // If price_type is different (e.g., 'per_week'), this logic needs adjustment.
-    // For now, we'll assume price is daily rate if price_type is 'per_night'.
+    // Calculate rent amount based on price_type
+    $basePrice = (float)$property['price'];
     $rent_amount = 0.00;
-    if ($property['price_type'] === 'per_night' && $property['price'] !== null) {
-        $rent_amount = (float)$property['price'] * $nights;
+    if ($property['price_type'] === 'per_night') {
+        $rent_amount = $basePrice * $nights;
+    } elseif ($property['price_type'] === 'per_week') {
+        $rent_amount = ($basePrice / 7) * $nights;
+    } elseif ($property['price_type'] === 'per_month') {
+        $rent_amount = ($basePrice / 30) * $nights;
     } else {
-        // Handle other price types or default to 0 if price is not set or type is unknown.
-        // For example, if price_type were 'per_week', you'd adjust calculation.
-        // For now, we'll log a warning if price_type is unexpected and rent is 0.
-        if ($property['price'] === null) {
-            error_log("Property {$property_id} has no price set.");
-        } else {
-             error_log("Unsupported price_type '{$property['price_type']}' for property {$property_id}. Assuming rent is 0.");
-        }
-        $rent_amount = 0.00; // Default to 0 if price not available or type not handled
+        // Fallback to per_night if unknown
+        $rent_amount = $basePrice * $nights;
     }
 
 

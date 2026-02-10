@@ -102,15 +102,18 @@ try {
     $service_fee_percent_config = (float)$config['fees']['service_fee_percentage'];
     $tax_percent_config = (float)$config['fees']['tax_percentage'];
 
-    // Calculate rent amount (assuming price is per night if price_type is 'per_night')
+    // Calculate rent amount based on price_type
+    $basePrice = (float)$property['price'];
     $rent_amount = 0.00;
-    if ($property['price_type'] === 'per_night' && $property['price'] !== null) {
-        $rent_amount = (float)$property['price'] * $nights;
+    if ($property['price_type'] === 'per_night') {
+        $rent_amount = $basePrice * $nights;
+    } elseif ($property['price_type'] === 'per_week') {
+        $rent_amount = ($basePrice / 7) * $nights;
+    } elseif ($property['price_type'] === 'per_month') {
+        $rent_amount = ($basePrice / 30) * $nights;
     } else {
-        error_log("Unsupported price_type '{$property['price_type']}' for property {$property_id}. Rent calculation may be inaccurate.");
-        // Potentially fallback or throw error depending on business logic
-        // For now, assume rent is 0 if price type is not 'per_night' or price is null
-        $rent_amount = 0.00;
+        // Fallback to per_night if unknown
+        $rent_amount = $basePrice * $nights;
     }
 
     $caution_fee = $caution_fee_config;

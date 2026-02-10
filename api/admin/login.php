@@ -6,6 +6,8 @@ require_once __DIR__ . '/../../utils/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 require_once __DIR__ . '/../../utils/jwt.php';
 
+require_once __DIR__ . '/../../utils/otp.php';
+
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     send_error('Invalid request method.', [], 405);
 }
@@ -35,19 +37,13 @@ if ($user['role'] !== 'admin') {
     send_error('Access denied. Not an admin user.', [], 403);
 }
 
-// Auto-complete onboarding for admin users if not already done
-if ($user['onboarding_step'] !== 'completed') {
-    $stmt = $pdo->prepare("UPDATE users SET onboarding_step = 'completed' WHERE id = ?");
-    $stmt->execute([$user['id']]);
-    $user['onboarding_step'] = 'completed';
+// Send OTP
+$otpManager = new OtpManager();
+if ($otpManager->sendOtp($user['id'], $user['email'])) {
+    send_success('Login initiated. OTP sent to your email.', ['email' => $user['email']]);
+} else {
+    // For local dev/testing if email fails, we might still want to allow it or return a test message
+    // but sticking to real logic:
+    send_error('Failed to send OTP. Please contact support.', [], 500);
 }
 
-$jwtData = [
-    'user_id' => $user['id'],
-    'email' => $user['email'],
-    'role' => $user['role'],
-    'is_admin' => true // Explicitly mark as admin in JWT
-];
-$token = JWTManager::generateToken($jwtData);
-
-send_success('Admin login successful.', ['token' => $token, 'role' => $user['role']]);

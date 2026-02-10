@@ -1,5 +1,10 @@
 <?php
 
+if (defined('ENV_LOADED')) {
+    return;
+}
+define('ENV_LOADED', true);
+
 // Database configuration
 define('DB_HOST', 'localhost');
 define('DB_NAME', '360homesub');
@@ -20,10 +25,21 @@ define('TWILIO_PHONE_NUMBER', '+2349064779856');
 define('RESEND_API_KEY', 're_gM1NVuXy_2jzvEXNKsDkrUkefYmd5g5X7');
 define('RESEND_FROM_EMAIL', 'ap@proforms.top');
 
+// Determine Base URL dynamically
+$protocol = (isset($_SERVER['HTTPS']) && $_SERVER['HTTPS'] === 'on' ? "https" : "http");
+$host = isset($_SERVER['HTTP_HOST']) ? $_SERVER['HTTP_HOST'] : 'localhost';
+$base_url = $protocol . "://" . $host;
+
+// If on localhost, include the project subdirectory if applicable
+if ($host === 'localhost' || $host === '127.0.0.1') {
+    $base_url .= '/360HomesHub';
+}
+define('BASE_URL', $base_url);
+
 // Google OAuth 2.0 Configuration
 define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID');
 define('GOOGLE_CLIENT_SECRET', 'YOUR_GOOGLE_CLIENT_SECRET');
-define('GOOGLE_REDIRECT_URI', 'http://localhost/api/auth/google_auth.php');
+define('GOOGLE_REDIRECT_URI', BASE_URL . '/api/auth/google_auth.php');
 
 // File Upload Configuration
 define('UPLOAD_DIR', __DIR__ . '/../public/uploads/');
@@ -35,7 +51,12 @@ define('OTP_EXPIRATION_MINUTES', 5);
 define('OTP_LENGTH', 6);
 
 // Payment Gateway Configuration
-define('PAYSTACK_SECRET_KEY', 'sk_test_xxxxxxxxxxxxxxxxxxxxxxxxxxxxx');
+define('PAYSTACK_SECRET_KEY', 'sk_test_44d01a2928eb943b5560869061c3aba8fe9af0db');
+define('PAYSTACK_PUBLIC_KEY', 'pk_test_ad01fac1c9522778a16e055964d6597adbdc93ec');
 define('FLUTTERWAVE_SECRET_KEY', 'FLWSECK_TEST-xxxxxxxxxxxxxxxxxxxxxxxxxxxxx-X');
-define('PAYSTACK_CALLBACK_URL', 'http://localhost/360HomesHub/api/payments/verify.php?gateway=paystack');
-define('FLUTTERWAVE_CALLBACK_URL', 'http://localhost/360HomesHub/api/payments/verify.php?gateway=flutterwave');
+define('PAYSTACK_CALLBACK_URL', BASE_URL . '/api/payments/verify.php?gateway=paystack');
+define('FLUTTERWAVE_CALLBACK_URL', BASE_URL . '/api/payments/verify.php?gateway=flutterwave');
+
+// Enable Error Reporting
+error_reporting(E_ALL);
+ini_set('display_errors', 1);

@@ -23,6 +23,29 @@ if (!$amount || !$booking_id) {
 $email = $userData['email'] ?? 'guest@example.com';
 $metadata = ['booking_id' => $booking_id, 'user_id' => $userData['user_id']];
 
+// Check if payment already exists for this booking
+$pdo = Database::getInstance();
+$stmt = $pdo->prepare("SELECT status, total_amount FROM bookings WHERE id = ?");
+$stmt->execute([$booking_id]);
+$booking = $stmt->fetch();
+
+if (!$booking) {
+    send_error('Booking not found.', [], 404);
+}
+
+if ($booking['status'] === 'confirmed') {
+    send_success('This booking has already been paid for.', [
+        'booking_id' => $booking_id,
+        'status' => $booking['status'],
+        'amount' => $booking['total_amount']
+    ]);
+    exit();
+}
+
+if ($booking['status'] !== 'approved') {
+    send_error("Payment cannot be initialized. Booking status: " . $booking['status'] . ". Only approved bookings can be paid for.", [], 400);
+}
+
 if ($gateway === 'paystack') {
     $paystack = new PaystackService();
     $data = $paystack->initializeTransaction($email, $amount, $metadata);

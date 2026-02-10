@@ -39,11 +39,55 @@ class OtpManager {
 
     private function sendEmailOtp(string $email, string $code): bool {
         // Updated: Use custom send_email function and handle its return
+        
+        $expiration = defined('OTP_EXPIRATION_MINUTES') ? OTP_EXPIRATION_MINUTES : 5;
+        
+        $html = "
+<!DOCTYPE html>
+<html>
+<head>
+<style>
+/* Clean styles */
+body { font-family: 'Helvetica Neue', Helvetica, Arial, sans-serif; background-color: #f9f9f9; padding: 20px; margin: 0; }
+.container { max-width: 600px; margin: 0 auto; background: #ffffff; border-radius: 12px; overflow: hidden; box-shadow: 0 4px 12px rgba(0,0,0,0.05); border: 1px solid #eee; }
+.header { background: #ffffff; padding: 30px; text-align: center; border-bottom: 3px solid #005a92; }
+.header h1 { color: #005a92; margin: 0; font-size: 22px; font-weight: 700; text-transform: uppercase; letter-spacing: 1px; }
+.content { padding: 40px; text-align: center; }
+.otp-label { font-size: 14px; color: #888; text-transform: uppercase; letter-spacing: 1px; margin-bottom: 10px; font-weight: 600; }
+.otp-code { font-size: 36px; font-weight: 800; letter-spacing: 8px; color: #005a92; margin: 10px 0 30px; background: #f8fbff; display: inline-block; padding: 20px 40px; border-radius: 12px; border: 2px dashed #dbeafe; }
+.footer { padding: 25px; text-align: center; color: #9ca3af; font-size: 12px; background: #f9fafb; border-top: 1px solid #f3f4f6; }
+.warning { color: #ef4444; font-size: 13px; margin-top: 20px; }
+</style>
+</head>
+<body>
+<div class='container'>
+    <div class='header'>
+        <h1>36HomesHub</h1>
+    </div>
+    <div class='content'>
+        <p style='color: #4b5563; font-size: 16px; margin-bottom: 30px; font-weight: 500;'>Verify your identity to access the Admin Portal</p>
+        
+        <div class='otp-label'>Verification Code</div>
+        <div class='otp-code'>$code</div>
+        
+        <p style='color: #6b7280; font-size: 14px; line-height: 1.6;'>This code is valid for <strong>$expiration minutes</strong>.<br>Do not share this code with anyone.</p>
+        
+        <div class='warning'>If you didn't request this, please contact support immediately.</div>
+    </div>
+    <div class='footer'>
+        &copy; " . date('Y') . " 36HomesHub Inc. All rights reserved.<br>
+        123 Innovation Drive, Tech City via Lagos.
+    </div>
+</div>
+</body>
+</html>
+";
+
         $send_result = send_email(
             $email,
-            RESEND_FROM_EMAIL,
-            'Your OTP Code',
-            "Your One-Time Password (OTP) is: <strong>$code</strong>. It expires in " . OTP_EXPIRATION_MINUTES . " minutes."
+            defined('RESEND_FROM_EMAIL') ? RESEND_FROM_EMAIL : null,
+            'Your 36HomesHub Verification Code',
+            $html
         );
 
         if ($send_result === true) {

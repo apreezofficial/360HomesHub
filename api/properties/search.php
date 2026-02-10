@@ -31,10 +31,12 @@ if ($user_lat === null || $user_lon === null) {
 try {
     $pdo = Database::getInstance();
 
-    $sql = "SELECT p.*, pi.image_url FROM properties p
+    $sql = "SELECT p.*, pi.media_url FROM properties p
             LEFT JOIN (
-                SELECT property_id, MIN(image_url) as image_url
-                FROM property_images GROUP BY property_id
+                SELECT property_id, MIN(media_url) as media_url
+                FROM property_images 
+                WHERE media_type = 'image'
+                GROUP BY property_id
             ) pi ON p.id = pi.property_id
             WHERE 1=1";
     
@@ -111,7 +113,7 @@ try {
         $response_properties[] = [
             'id' => (int) $property['id'],
             'name' => $property['name'],
-            'image' => $property['image_url'],
+            'image' => $property['media_url'],
             'distance' => round($property['distance'], 2),
             'price' => (float) $property['price'],
             'price_type' => $property['price_type'],

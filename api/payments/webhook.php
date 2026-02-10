@@ -12,7 +12,7 @@ $payload = file_get_contents('php://input');
 
 // Verify Paystack Signature
 if (isset($_SERVER['HTTP_X_PAYSTACK_SIGNATURE'])) {
-    $paystack_secret = $_SERVER['PAYSTACK_SECRET_KEY'] ?? getenv('PAYSTACK_SECRET_KEY');
+    $paystack_secret = PAYSTACK_SECRET_KEY;
     if ($paystack_secret) {
         $expected_signature = hash_hmac('sha512', $payload, $paystack_secret);
         if ($expected_signature === $_SERVER['HTTP_X_PAYSTACK_SIGNATURE']) {
@@ -139,9 +139,9 @@ if ($payment_successful && $booking_id_from_metadata) {
         // Only process if the booking status is 'approved' (meaning it's ready for payment confirmation)
         // or potentially a status like 'awaiting_payment'.
         // If it's already 'paid', we can ignore the webhook or log it as a duplicate.
-        if ($booking['status'] === 'paid') {
-            error_log("Webhook received for already paid booking ID {$booking_id}. Ignoring.");
-            send_json_response(200, ["message" => "Booking already paid. Webhook processed, but no action taken."]);
+        if ($booking['status'] === 'confirmed') {
+            error_log("Webhook received for already confirmed booking ID {$booking_id}. Ignoring.");
+            send_json_response(200, ["message" => "Booking already confirmed. Webhook processed, but no action taken."]);
             exit;
         }
 
@@ -171,55 +171,43 @@ if ($payment_successful && $booking_id_from_metadata) {
         }
 
 
-        // --- Update Booking Status to Paid ---
-        $update_sql = "
-            UPDATE bookings
-            SET status = 'paid', created_at = created_at -- Or a new payment_timestamp column if available
-            WHERE id = :booking_id AND status = 'approved' -- Ensure we only update if it's still approved
-        ";
-        $update_stmt = $pdo->prepare($update_sql);
-        $update_stmt->bindParam(':booking_id', $booking_id, PDO::PARAM_INT);
+                // --- Update Booking Status to Confirmed ---
+                $update_sql = "
+                    UPDATE bookings
+                    SET status = 'confirmed'
+                    WHERE id = :booking_id AND status = 'approved'
+                ";
+                $update_stmt = $pdo->prepare($update_sql);
+                $update_stmt->bindParam(':booking_id', $booking_id, PDO::PARAM_INT);
 
-        if ($update_stmt->execute()) {
-            if ($update_stmt->rowCount() > 0) { // Check if a row was actually updated
-                error_log("Booking {$booking_id} successfully marked as paid.");
+                if ($update_stmt->execute()) {
+                    if ($update_stmt->rowCount() > 0) {
+                        error_log("Booking {$booking_id} successfully marked as confirmed.");
 
-                // --- Credit Host Wallet (Conceptual) ---
-                // This is a placeholder. In a real system, you'd interact with a wallet service or ledger.
-                $host_id = (int)$booking['host_id'];
-                $rent_amount = (float)$booking['total_amount']; // Assuming total_amount includes fees for simplicity here.
-                                                              // In a real system, you might credit only rent amount minus your service fee.
-                error_log("Crediting host wallet (ID: {$host_id}) with amount: {$rent_amount} for booking {$booking_id}.");
-                // Example: callWalletService($host_id, $rent_amount);
+                        // --- Send Notifications ---
+                        $guest_id = (int)$booking['guest_id'];
+                        $host_id = (int)$booking['host_id'];
+                        $property_name = $booking['property_name'];
 
+                        // Notify Guest
+                        sendNotification($guest_id, "Payment Confirmed", "Your payment for '{$property_name}' has been successfully processed. Your booking is now confirmed!", 'important');
 
-                // --- Send Notifications ---
-                $guest_id = (int)$booking['guest_id'];
-                $property_name = $booking['property_name'];
+                        // Notify Host
+                        sendNotification($host_id, "Booking Confirmed", "Booking for '{$property_name}' (ID: {$booking_id}) has been confirmed. Guest: {$guest_id}.", 'important');
 
-                // Notify Guest (Important)
-                sendNotification($guest_id, "Payment Confirmed", "Your payment for '{$property_name}' has been successfully processed. Your booking is now confirmed!", 'important');
+                        // Notify Admin
+                        $admin_user_id = 1;
+                        sendNotification($admin_user_id, "Payment Received", "Payment received for booking ID {$booking_id} ({$booking['property_name']}). Guest: {$guest_id}, Host: {$host_id}. Amount: {$expected_amount}.", 'important');
 
-                // Notify Host (Important)
-                sendNotification($host_id, "Booking Confirmed", "Booking for '{$property_name}' (ID: {$booking_id}) has been confirmed. Guest: {$guest_id}.", 'important');
-
-                // Notify Admin (Important)
-                $admin_user_id = 1; // Assuming admin user ID is 1
-                sendNotification($admin_user_id, "Payment Received", "Payment received for booking ID {$booking_id} ({$booking['property_name']}). Guest: {$guest_id}, Host: {$host_id}. Amount: {$expected_amount}.", 'important');
-
-                // Respond to the payment gateway with success
-                send_json_response(200, ["message" => "Payment webhook processed successfully. Booking {$booking_id} confirmed."]);
-
-            } else {
-                // This case might happen if the booking was already processed between fetch and update.
-                error_log("Webhook processed for booking {$booking_id}, but no rows were updated (status might have changed).");
-                send_json_response(200, ["message" => "Booking already processed or status changed. Webhook processed, but no action taken."]);
-            }
-        } else {
-            // If the update failed, log it and potentially respond with an error to the gateway.
-            error_log("Webhook failed to update booking {$booking_id} status to paid.");
-            send_json_response(500, ["message" => "Failed to update booking status after payment confirmation."]);
-        }
+                        send_json_response(200, ["message" => "Payment webhook processed successfully. Booking {$booking_id} confirmed."]);
+                    } else {
+                        error_log("Webhook processed for booking {$booking_id}, but no rows were updated.");
+                        send_json_response(200, ["message" => "Booking already processed or status changed."]);
+                    }
+                } else {
+                    error_log("Webhook failed to update booking {$booking_id} status.");
+                    send_json_response(500, ["message" => "Failed to update booking status."]);
+                }
 
     } catch (PDOException $e) {
         error_log("Database error processing webhook for booking {$booking_id}: " . $e->getMessage());

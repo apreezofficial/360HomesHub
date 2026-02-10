@@ -7,6 +7,7 @@ require_once __DIR__ . '/response.php'; // For error handling
 use Firebase\JWT\JWT;
 use Firebase\JWT\Key;
 
+if (!class_exists('JWTManager')) {
 class JWTManager {
 
     public static function generateToken(array $data): string {
@@ -50,4 +51,5 @@ class JWTManager {
 
         return $userData;
     }
+}
 }

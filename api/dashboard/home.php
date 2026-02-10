@@ -63,7 +63,9 @@ try {
         FROM properties p
         LEFT JOIN (
             SELECT property_id, MIN(media_url) as image_url
-            FROM property_images GROUP BY property_id
+            FROM property_images 
+            WHERE media_type = 'image'
+            GROUP BY property_id
         ) pi ON p.id = pi.property_id
     ");
     $prop_stmt->execute();

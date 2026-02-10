@@ -16,7 +16,7 @@ try {
     $pdo = Database::getInstance();
     
     // Fetch all users with basic info
-    $stmt = $pdo->prepare("SELECT id, first_name, last_name, email, phone, role, is_verified, onboarding_step, created_at FROM users ORDER BY created_at DESC");
+    $stmt = $pdo->prepare("SELECT id, first_name, last_name, email, phone, role, is_verified, onboarding_step, created_at, profile_pic FROM users ORDER BY created_at DESC");
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
