@@ -21,7 +21,7 @@ try {
     if ($targetId === 'current') $targetId = $user['user_id'];
 
     // Get Admin Details
-    $stmt = $pdo->prepare("SELECT id, first_name, last_name, email, role, is_verified, created_at, last_login, last_ip FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, first_name, last_name, email, role, is_verified, created_at, last_login, last_ip, avatar FROM users WHERE id = ?");
     $stmt->execute([$targetId]);
     $admin = $stmt->fetch(PDO::FETCH_ASSOC);
 

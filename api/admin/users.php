@@ -15,12 +15,28 @@ if ($userData['role'] !== 'admin') {
 try {
     $pdo = Database::getInstance();
     
-    // Fetch all users with basic info
-    $stmt = $pdo->prepare("SELECT id, first_name, last_name, email, phone, role, is_verified, onboarding_step, created_at, profile_pic FROM users ORDER BY created_at DESC");
+    // Fetch all users with basic info and activity counts
+    $stmt = $pdo->prepare("
+        SELECT id, first_name, last_name, email, phone, role, is_verified, onboarding_step, created_at, avatar,
+               (SELECT COUNT(*) FROM bookings WHERE guest_id = users.id) as booking_count,
+               (SELECT COUNT(*) FROM properties WHERE host_id = users.id) as listing_count
+        FROM users 
+        ORDER BY created_at DESC
+    ");
     $stmt->execute();
     $users = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
-    send_success('Users retrieved successfully.', ['users' => $users]);
+    // Fetch summary stats
+    $stats = [
+        'total_users' => $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn(),
+        'host_count' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'host'")->fetchColumn(),
+        'guest_count' => $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'guest'")->fetchColumn(),
+    ];
+
+    send_success('Users retrieved successfully.', [
+        'users' => $users,
+        'stats' => $stats
+    ]);
 
 } catch (Exception $e) {
     error_log("Admin users error: " . $e->getMessage());

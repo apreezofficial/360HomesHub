@@ -20,11 +20,11 @@ $pdo = Database::getInstance();
 $user = null;
 
 if (!empty($email)) {
-    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role FROM users WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 } elseif (!empty($phone)) {
-    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role FROM users WHERE phone = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE phone = ?");
     $stmt->execute([$phone]);
     $user = $stmt->fetch();
 }
@@ -46,7 +46,8 @@ $jwtData = [
     'phone' => $user['phone'],
     'onboarding_step' => $user['onboarding_step'],
     'is_verified' => (bool)$user['is_verified'],
-    'role' => $user['role']
+    'role' => $user['role'],
+    'avatar' => $user['avatar']
 ];
 $token = JWTManager::generateToken($jwtData);
 

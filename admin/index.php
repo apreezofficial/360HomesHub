@@ -167,233 +167,212 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
         body { font-family: 'Outfit', sans-serif; }
     </style>
 </head>
-<body class="bg-white min-h-screen">
+<body class="bg-[#F9FAFB] min-h-screen font-outfit">
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-[240px] fixed h-full bg-white z-50"></aside>
+        <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
 
         <!-- Main Content -->
-        <main class="flex-1 ml-[240px] bg-gray-50 min-h-screen p-6">
+        <main class="flex-1 ml-[260px] min-h-screen p-8">
             <!-- Top Nav -->
-            <div class="flex justify-between items-center mb-8">
-                <div class="flex items-center gap-3 bg-white px-4 py-2.5 rounded-xl border border-border w-full max-w-[450px]">
-                    <i class="bi bi-search text-gray-400"></i>
-                    <input type="text" placeholder="Search for users, listings or bookings..." class="w-full outline-none text-[15px] bg-transparent">
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-[14px] text-gray-400">
+                    Dashboard overview
                 </div>
-                <div class="relative">
-                    <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer">
-                        <i class="bi bi-bell text-xl text-gray-600"></i>
-                        <span class="absolute top-0 right-0 w-2.5 h-2.5 bg-red-500 border-2 border-white rounded-full"></span>
+                <div class="flex-1 max-w-[500px] mx-8">
+                    <div class="relative">
+                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" placeholder="Search for users, listings or bookings..." 
+                               class="w-full bg-white border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/5 shadow-sm transition-all">
                     </div>
                 </div>
+                <div class="w-10"></div>
             </div>
 
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-900">Dashboard overview</h1>
-                <form method="GET" class="relative inline-block">
-                    <select name="period" onchange="this.form.submit()" class="appearance-none bg-white border border-border px-4 py-2 rounded-lg text-sm font-medium focus:outline-none pr-10 cursor-pointer">
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-[32px] font-bold text-gray-900 mb-2">Welcome back, Admin</h1>
+                    <p class="text-gray-400 text-[15px]">Here's what's happening with your platform today.</p>
+                </div>
+                <form method="GET" class="relative">
+                    <select name="period" onchange="this.form.submit()" class="appearance-none bg-white border border-gray-100 px-6 py-3 rounded-xl text-[14px] font-bold text-gray-700 focus:outline-none pr-12 cursor-pointer shadow-sm">
                         <option value="30_days" <?= $period === '30_days' ? 'selected' : '' ?>>Last 30 days</option>
                         <option value="7_days" <?= $period === '7_days' ? 'selected' : '' ?>>Last 7 days</option>
                         <option value="1_year" <?= $period === '1_year' ? 'selected' : '' ?>>Last year</option>
                     </select>
-                    <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none"></i>
+                    <i class="bi bi-chevron-down absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
                 </form>
             </div>
 
             <!-- Stats Grid -->
-            <div class="grid grid-cols-4 gap-6 mb-10">
-                <div class="bg-white p-6 rounded-2xl border border-border">
-                    <div class="flex items-center gap-2 text-text-secondary text-[15px] mb-4">
-                        <i class="bi bi-people"></i>
-                        <span>Total users</span>
-                    </div>
-                    <div class="text-[32px] font-extrabold mb-2"><?= number_format($totalUsers) ?></div>
-                    <div class="text-[13px]">
-                        <span class="<?= $userGrowth >= 0 ? 'text-green-600' : 'text-red-500' ?> font-semibold">
-                            <?= $userGrowth >= 0 ? '+' : '' ?><?= $userGrowth ?>% vs <?= $periodLabel ?>
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-2xl border border-border">
-                    <div class="flex items-center gap-2 text-text-secondary text-[15px] mb-4">
-                        <i class="bi bi-list-ul"></i>
-                        <span>Active listings</span>
-                    </div>
-                    <div class="text-[32px] font-extrabold mb-2"><?= number_format($totalListings) ?></div>
-                    <div class="text-[13px]">
-                        <span class="<?= $listingGrowth >= 0 ? 'text-green-600' : 'text-red-500' ?> font-semibold">
-                            <?= $listingGrowth >= 0 ? '+' : '' ?><?= $listingGrowth ?>% vs <?= $periodLabel ?>
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-2xl border border-border">
-                    <div class="flex items-center gap-2 text-text-secondary text-[15px] mb-4">
-                        <i class="bi bi-house-check"></i>
-                        <span>Active bookings</span>
-                    </div>
-                    <div class="text-[32px] font-extrabold mb-2"><?= number_format($totalBookings) ?></div>
-                    <div class="text-[13px]">
-                        <span class="<?= $bookingGrowth >= 0 ? 'text-green-600' : 'text-red-500' ?> font-semibold">
-                            <?= $bookingGrowth >= 0 ? '+' : '' ?><?= $bookingGrowth ?>% vs <?= $periodLabel ?>
-                        </span>
-                    </div>
-                </div>
-                
-                <div class="bg-white p-6 rounded-2xl border border-border">
-                    <div class="flex items-center gap-2 text-text-secondary text-[15px] mb-4">
-                        <i class="bi bi-cash-stack"></i>
-                        <span>Total earnings</span>
-                    </div>
-                    <div class="text-[32px] font-extrabold mb-2">₦<?= number_format($totalRevenue) ?></div>
-                    <div class="text-[13px]">
-                        <span class="<?= $revenueGrowth >= 0 ? 'text-green-600' : 'text-red-500' ?> font-semibold">
-                            <?= $revenueGrowth >= 0 ? '+' : '' ?><?= $revenueGrowth ?>% vs <?= $periodLabel ?>
-                        </span>
-                    </div>
-                </div>
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+                <?= dashboardStatCard('Total users', number_format($totalUsers), $userGrowth, 'bi-people') ?>
+                <?= dashboardStatCard('Active listings', number_format($totalListings), $listingGrowth, 'bi-building') ?>
+                <?= dashboardStatCard('Active bookings', number_format($totalBookings), $bookingGrowth, 'bi-calendar-check') ?>
+                <?= dashboardStatCard('Total earnings', '₦' . number_format($totalRevenue), $revenueGrowth, 'bi-wallet2') ?>
             </div>
 
-            <div class="grid grid-cols-[1.5fr_1fr] gap-6">
+            <div class="grid grid-cols-12 gap-8">
                 <!-- Action Queue -->
-                <div class="bg-white rounded-2xl border border-border p-6 h-fit">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-bold">Action queue</h2>
-                        <i class="bi bi-arrow-clockwise text-xl text-gray-400 cursor-pointer"></i>
+                <div class="col-span-12 lg:col-span-8 space-y-8">
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+                        <div class="p-8 border-b border-gray-50 flex justify-between items-center">
+                            <h2 class="text-[18px] font-bold text-gray-900">Action queue</h2>
+                            <button class="text-gray-400 hover:text-gray-900 transition-colors"><i class="bi bi-arrow-clockwise text-xl"></i></button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 bg-gray-50/30">
+                                        <th class="py-4 px-8">Action entity</th>
+                                        <th class="py-4 px-8">Description</th>
+                                        <th class="py-4 px-8">Severity</th>
+                                        <th class="py-4 px-8">Time</th>
+                                        <th class="py-4 px-8 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50 text-[14px]">
+                                    <?php if (empty($actionQueue)): ?>
+                                        <tr><td colspan="5" class="py-12 text-center text-gray-400 font-medium">No pending actions</td></tr>
+                                    <?php else: ?>
+                                        <?php foreach($actionQueue as $item): ?>
+                                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                                <td class="py-5 px-8">
+                                                    <div class="font-bold text-gray-900"><?= htmlspecialchars($item['entity']) ?></div>
+                                                </td>
+                                                <td class="py-5 px-8 text-gray-500 font-medium"><?= htmlspecialchars($item['desc']) ?></td>
+                                                <td class="py-5 px-8">
+                                                    <div class="flex items-center gap-2">
+                                                        <span class="w-2 h-2 rounded-full <?= $item['severity'] === 'High' ? 'bg-orange-400' : 'bg-blue-400' ?>"></span>
+                                                        <span class="font-bold <?= $item['severity'] === 'High' ? 'text-orange-500' : 'text-blue-500' ?> text-[13px] uppercase tracking-wider"><?= $item['severity'] ?></span>
+                                                    </div>
+                                                </td>
+                                                <td class="py-5 px-8 text-gray-400 font-medium"><?= date('h:i A', strtotime($item['time'])) ?></td>
+                                                <td class="py-5 px-8 text-right">
+                                                    <a href="<?= $item['action_link'] ?>" class="text-[#005a92] font-bold hover:underline"><?= $item['action_text'] ?></a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
-                    <div class="overflow-x-auto">
-                        <table class="w-full text-left">
-                            <thead>
-                                <tr class="text-[12px] uppercase text-text-secondary border-b border-border">
-                                    <th class="pb-3 font-medium">Action entity</th>
-                                    <th class="pb-3 font-medium">Description</th>
-                                    <th class="pb-3 font-medium">Severity</th>
-                                    <th class="pb-3 font-medium">Time</th>
-                                    <th class="pb-3 font-medium">Action</th>
-                                </tr>
-                            </thead>
-                            <tbody class="divide-y divide-border">
-                                <?php if (empty($actionQueue)): ?>
-                                    <tr><td colspan="5" class="py-4 text-center text-gray-500">No pending actions</td></tr>
-                                <?php else: ?>
-                                    <?php foreach($actionQueue as $item): ?>
-                                        <tr class="text-[14px]">
-                                            <td class="py-4">
-                                                <div class="font-bold text-gray-900"><?= htmlspecialchars($item['entity']) ?></div>
-                                            </td>
-                                            <td class="py-4 text-text-secondary w-1/3"><?= htmlspecialchars($item['desc']) ?></td>
-                                            <td class="py-4">
-                                                <div class="flex items-center gap-2">
-                                                    <span class="w-2 h-2 rounded-full <?= $item['severity'] === 'High' ? 'bg-orange-400' : 'bg-blue-400' ?>"></span>
-                                                    <span class="font-medium <?= $item['severity'] === 'High' ? 'text-orange-500' : 'text-blue-500' ?>"><?= $item['severity'] ?></span>
-                                                </div>
-                                            </td>
-                                            <td class="py-4 text-gray-400 text-xs"><?= date('h:i A', strtotime($item['time'])) ?></td>
-                                            <td class="py-4">
-                                                <a href="<?= $item['action_link'] ?>" class="text-primary font-bold hover:underline"><?= $item['action_text'] ?></a>
-                                            </td>
-                                        </tr>
-                                    <?php endforeach; ?>
-                                <?php endif; ?>
-                            </tbody>
-                        </table>
+
+                    <!-- Recently Added Listings -->
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
+                        <div class="p-8 border-b border-gray-50 flex justify-between items-center">
+                            <h2 class="text-[18px] font-bold text-gray-900">Recently added listing</h2>
+                            <button class="text-gray-400 hover:text-gray-900 transition-colors"><i class="bi bi-arrow-clockwise text-xl"></i></button>
+                        </div>
+                        <div class="overflow-x-auto">
+                            <table class="w-full text-left">
+                                <thead>
+                                    <tr class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 bg-gray-50/30">
+                                        <th class="py-4 px-8">Listing details</th>
+                                        <th class="py-4 px-8">Location</th>
+                                        <th class="py-4 px-8">Host</th>
+                                        <th class="py-4 px-8">Status</th>
+                                        <th class="py-4 px-8">Price</th>
+                                        <th class="py-4 px-8 text-right">Action</th>
+                                    </tr>
+                                </thead>
+                                <tbody class="divide-y divide-gray-50 text-[14px]">
+                                    <?php if (empty($recentListings)): ?>
+                                        <tr><td colspan="6" class="py-12 text-center text-gray-400 font-medium">No recently added listings</td></tr>
+                                    <?php else: ?>
+                                        <?php foreach($recentListings as $p): 
+                                            $statusClass = 'bg-yellow-50 text-yellow-600';
+                                            if($p['status'] === 'published' || $p['status'] === 'active') $statusClass = 'bg-green-50 text-green-500';
+                                            if($p['status'] === 'rejected' || $p['status'] === 'archived') $statusClass = 'bg-red-50 text-red-500';
+                                        ?>
+                                            <tr class="hover:bg-gray-50/50 transition-colors">
+                                                <td class="py-5 px-8">
+                                                    <div class="flex items-center gap-4">
+                                                        <div class="h-10 w-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                                                            <img src="../api/placeholder_image.php" class="h-full w-full object-cover">
+                                                        </div>
+                                                        <div>
+                                                            <div class="font-bold text-gray-900 truncate max-w-[150px]"><?= htmlspecialchars($p['name'] ?? 'Untitled') ?></div>
+                                                            <div class="text-[11px] text-gray-300 font-medium uppercase tracking-tighter mt-0.5">ID: LST-<?= str_pad($p['id'], 6, '0', STR_PAD_LEFT) ?></div>
+                                                        </div>
+                                                    </div>
+                                                </td>
+                                                <td class="py-5 px-8 text-gray-500 font-medium whitespace-nowrap"><?= htmlspecialchars($p['city']) ?>, <?= htmlspecialchars($p['state']) ?></td>
+                                                <td class="py-5 px-8 font-bold text-gray-900 whitespace-nowrap"><?= htmlspecialchars($p['first_name']) ?> <?= htmlspecialchars($p['last_name']) ?></td>
+                                                <td class="py-5 px-8">
+                                                    <span class="px-3 py-1.5 rounded-full text-[11px] font-bold uppercase <?= $statusClass ?>"><?= $p['status'] ?></span>
+                                                </td>
+                                                <td class="py-5 px-8 font-bold text-gray-900 whitespace-nowrap">₦<?= number_format($p['price']) ?>/m</td>
+                                                <td class="py-5 px-8 text-right">
+                                                    <a href="property_view.php?id=<?= $p['id'] ?>" class="p-2 text-gray-300 hover:text-gray-900 transition-colors"><i class="bi bi-eye-fill"></i></a>
+                                                </td>
+                                            </tr>
+                                        <?php endforeach; ?>
+                                    <?php endif; ?>
+                                </tbody>
+                            </table>
+                        </div>
                     </div>
                 </div>
 
                 <!-- Activities -->
-                <div class="bg-white rounded-2xl border border-border p-6 h-fit">
-                    <div class="flex justify-between items-center mb-6">
-                        <h2 class="text-lg font-bold">Activities</h2>
-                    </div>
-                    <div class="flex gap-1 bg-slate-100 p-1 rounded-xl mb-6">
-                        <button class="flex-1 py-2 text-[14px] font-semibold rounded-lg bg-white shadow-sm">Today</button>
-                        <button class="flex-1 py-2 text-[14px] font-semibold text-gray-500">Yesterday</button>
-                        <button class="flex-1 py-2 text-[14px] font-semibold text-gray-500">This week</button>
-                    </div>
-                    <div class="space-y-4">
-                        <?php if (empty($activities)): ?>
-                            <div class="text-center text-gray-500 py-4">No recent activities</div>
-                        <?php else: ?>
-                            <?php foreach($activities as $act): ?>
-                                <div class="flex gap-3 items-start p-4 rounded-xl border border-gray-100 bg-slate-50/50">
-                                    <div class="w-8 h-8 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm shrink-0">
-                                        <i class="bi <?= $act['type'] === 'property' ? 'bi-house' : 'bi-person' ?> text-gray-600"></i>
-                                    </div>
-                                    <div class="flex-1">
-                                        <div class="flex justify-between items-center mb-1">
-                                            <span class="font-bold text-[14px] text-gray-900"><?= htmlspecialchars($act['title']) ?></span>
-                                            <span class="text-[12px] text-gray-400"><?= date('h:i A', strtotime($act['time'])) ?></span>
-                                        </div>
-                                        <p class="text-[13px] text-text-secondary leading-tight"><?= htmlspecialchars($act['desc']) ?></p>
-                                    </div>
-                                </div>
-                            <?php endforeach; ?>
-                        <?php endif; ?>
-                    </div>
-                </div>
-            </div>
-
-            <!-- Recently Added Listings -->
-            <div class="bg-white rounded-2xl border border-border p-6 mt-6">
-                <div class="flex justify-between items-center mb-6">
-                    <h2 class="text-lg font-bold">Recently added listing</h2>
-                    <i class="bi bi-arrow-clockwise text-xl text-gray-400 cursor-pointer"></i>
-                </div>
-                <div class="overflow-x-auto">
-                    <table class="w-full text-left">
-                        <thead>
-                            <tr class="text-[12px] uppercase text-text-secondary border-b border-border">
-                                <th class="pb-3 font-medium">Listing details</th>
-                                <th class="pb-3 font-medium">Location</th>
-                                <th class="pb-3 font-medium">Host</th>
-                                <th class="pb-3 font-medium">Status</th>
-                                <th class="pb-3 font-medium">Price</th>
-                                <th class="pb-3 font-medium text-right pr-4">Action</th>
-                            </tr>
-                        </thead>
-                        <tbody class="divide-y divide-border">
-                            <?php if (empty($recentListings)): ?>
-                                <tr><td colspan="6" class="py-4 text-center text-gray-500">No recently added listings</td></tr>
+                <div class="col-span-12 lg:col-span-4 h-fit">
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <h2 class="text-[18px] font-bold text-gray-900">Activities</h2>
+                        </div>
+                        <div class="flex gap-1 bg-gray-100 p-1 rounded-xl mb-8">
+                            <button class="flex-1 py-2.5 text-[13px] font-bold rounded-lg bg-white shadow-sm text-gray-900">Today</button>
+                            <button class="flex-1 py-2.5 text-[13px] font-bold text-gray-400">Yesterday</button>
+                            <button class="flex-1 py-2.5 text-[13px] font-bold text-gray-400">This week</button>
+                        </div>
+                        <div class="space-y-6">
+                            <?php if (empty($activities)): ?>
+                                <div class="text-center text-gray-400 py-12 font-medium">No recent activities</div>
                             <?php else: ?>
-                                <?php foreach($recentListings as $p): 
-                                    $statusBadge = 'bg-yellow-50 text-yellow-600';
-                                    if($p['status'] === 'published' || $p['status'] === 'active') $statusBadge = 'bg-green-50 text-green-600';
-                                    if($p['status'] === 'rejected' || $p['status'] === 'archived') $statusBadge = 'bg-red-50 text-red-600';
-                                ?>
-                                    <tr class="text-[14px] hover:bg-slate-50 transition-colors">
-                                        <td class="py-4 pr-4">
-                                            <div class="flex items-center gap-3">
-                                                <div class="h-12 w-12 rounded-lg bg-gray-200 overflow-hidden flex-shrink-0">
-                                                    <img src="../api/placeholder_image.php" class="h-full w-full object-cover">
-                                                </div>
-                                                <div>
-                                                    <span class="font-bold block text-gray-900 truncate max-w-[150px]"><?= htmlspecialchars($p['name'] ?? 'Untitled') ?></span>
-                                                    <span class="text-[12px] text-gray-400">ID: LST-<?= str_pad($p['id'], 4, '0', STR_PAD_LEFT) ?></span>
-                                                </div>
+                                <?php foreach($activities as $act): ?>
+                                    <div class="flex gap-4 items-start p-5 rounded-[20px] border border-gray-50 bg-gray-50/30 group hover:bg-white hover:shadow-md transition-all">
+                                        <div class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center shadow-sm shrink-0">
+                                            <i class="bi <?= $act['type'] === 'property' ? 'bi-house' : 'bi-person' ?> text-gray-400 group-hover:text-primary transition-colors"></i>
+                                        </div>
+                                        <div class="flex-1 min-w-0">
+                                            <div class="flex justify-between items-center mb-1">
+                                                <span class="font-bold text-[14px] text-gray-900 truncate"><?= htmlspecialchars($act['title']) ?></span>
+                                                <span class="text-[11px] text-gray-400 font-medium"><?= date('h:i A', strtotime($act['time'])) ?></span>
                                             </div>
-                                        </td>
-                                        <td class="py-4 text-gray-600 text-sm whitespace-nowrap"><?= htmlspecialchars($p['city'] ?? '-') ?>, <?= htmlspecialchars($p['state'] ?? '-') ?></td>
-                                        <td class="py-4 font-medium whitespace-nowrap"><?= htmlspecialchars($p['first_name']) ?> <?= htmlspecialchars($p['last_name']) ?></td>
-                                        <td class="py-4">
-                                            <span class="px-2.5 py-1 rounded-md text-[11px] font-bold uppercase <?= $statusBadge ?>"><?= $p['status'] ?></span>
-                                        </td>
-                                        <td class="py-4 font-bold text-gray-900 whitespace-nowrap">₦<?= number_format($p['price']) ?>/m</td>
-                                        <td class="py-4 text-right pr-4">
-                                            <a href="property_view.php?id=<?= $p['id'] ?>" class="text-gray-400 hover:text-primary transition-colors"><i class="bi bi-eye-fill"></i></a>
-                                        </td>
-                                    </tr>
+                                            <p class="text-[12px] text-gray-400 leading-tight line-clamp-2"><?= htmlspecialchars($act['desc']) ?></p>
+                                        </div>
+                                    </div>
                                 <?php endforeach; ?>
                             <?php endif; ?>
-                        </tbody>
-                    </table>
+                        </div>
+                    </div>
                 </div>
             </div>
         </main>
     </div>
 
+    <?php
+    function dashboardStatCard($label, $val, $growth, $icon) {
+        $growthColor = $growth >= 0 ? 'text-green-500' : 'text-red-500';
+        $growthText = ($growth >= 0 ? '+' : '') . $growth . '% vs last month';
+        return "
+            <div class='bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm relative overflow-hidden group'>
+                <div class='flex items-center gap-3 mb-6'>
+                    <div class='w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-gray-400'>
+                         <i class='bi {$icon} text-[20px]'></i>
+                    </div>
+                    <span class='text-[15px] font-bold text-gray-800'>{$label}</span>
+                </div>
+                <div class='text-[36px] font-bold text-gray-900 mb-2'>{$val}</div>
+                <div class='text-[13px] font-bold {$growthColor}'>{$growthText}</div>
+            </div>
+        ";
+    }
+    ?>
+
     <script>
-        // Inject JWT token from session into localStorage for API calls
         <?php if (isset($_SESSION['jwt_token'])): ?>
             localStorage.setItem('jwt_token', '<?= $_SESSION['jwt_token'] ?>');
         <?php endif; ?>

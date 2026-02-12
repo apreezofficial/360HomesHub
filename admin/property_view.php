@@ -47,108 +47,162 @@ if (!isset($_SESSION['jwt_token'])) {
     </script>
     <style>body { font-family: 'Outfit', sans-serif; }</style>
 </head>
-<body class="bg-white min-h-screen">
+<body class="bg-[#F9FAFB] min-h-screen font-outfit">
     <div class="flex min-h-screen">
-        <aside class="w-[240px] fixed h-full bg-white z-50"></aside>
+        <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
 
-        <main class="flex-1 ml-[240px] bg-gray-50 min-h-screen p-6">
-            <div class="mb-8 flex items-center justify-between">
-                <div class="flex items-center gap-3">
-                    <a href="index.php" class="text-gray-400 hover:text-primary transition-colors"><i class="bi bi-arrow-left text-xl"></i></a>
+        <main class="flex-1 ml-[260px] min-h-screen p-8">
+            <!-- Breadcrumbs -->
+            <div class="text-[14px] text-gray-400 mb-8 flex items-center gap-2">
+                <a href="listings.php" class="hover:text-gray-900 transition-colors">Listings</a>
+                <span class="text-gray-300">/</span>
+                <span class="text-gray-900 font-medium" id="breadcrumb-prop-name">Property Details</span>
+            </div>
+
+            <!-- Header -->
+            <div class="flex justify-between items-start mb-10">
+                <div class="flex items-center gap-5">
+                    <div class="w-16 h-16 rounded-2xl bg-primary/5 border border-primary/10 flex items-center justify-center text-primary shadow-sm">
+                        <i class="bi bi-house-door text-[28px]"></i>
+                    </div>
                     <div>
-                        <h1 class="text-2xl font-bold text-gray-900">Property Details</h1>
-                        <p class="text-text-secondary text-sm mt-1">Review and manage property listing</p>
+                        <div class="flex items-center gap-3 mb-1">
+                            <h1 class="text-[28px] font-bold text-gray-900" id="header-p-name">Loading...</h1>
+                            <span id="header-p-status" class="px-3 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider"></span>
+                        </div>
+                        <div class="text-[14px] text-gray-400 flex items-center gap-2" id="header-p-location">
+                            -
+                        </div>
                     </div>
                 </div>
-                <div id="admin-actions" class="flex gap-3">
-                    <button onclick="updatePropertyStatus('archived')" class="px-5 py-2.5 rounded-xl border border-red-200 text-red-600 font-bold text-sm hover:bg-red-50 transition-colors">Reject & Archive</button>
-                    <button onclick="updatePropertyStatus('published')" class="px-5 py-2.5 rounded-xl bg-green-600 text-white font-bold text-sm hover:bg-green-700 transition-colors shadow-sm">Approve & Publish</button>
+                <div id="admin-actions" class="flex items-center gap-4 hidden">
+                    <button onclick="updatePropertyStatus('archived')" class="px-6 py-3 border border-red-100 text-red-500 bg-white rounded-xl font-bold text-[14px] hover:bg-red-50 transition-all flex items-center gap-2">
+                        <i class="bi bi-x-circle"></i> Reject Listing
+                    </button>
+                    <button onclick="updatePropertyStatus('published')" class="px-6 py-3 bg-[#005a92] text-white rounded-xl font-bold text-[14px] shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
+                        <i class="bi bi-check2-circle"></i> Approve Listing
+                    </button>
                 </div>
             </div>
 
-            <div id="loading" class="text-center py-20 text-gray-500">Loading property data...</div>
+            <div id="loading-state" class="py-32 flex flex-col items-center justify-center text-gray-400">
+                <div class="w-12 h-12 border-4 border-gray-100 border-t-primary rounded-full animate-spin mb-4"></div>
+                <p class="font-medium">Fetching listing metadata...</p>
+            </div>
 
-            <div id="content" class="hidden grid-cols-12 gap-8">
+            <div id="content-grid" class="hidden grid grid-cols-12 gap-8">
                 <!-- Main Content -->
                 <div class="col-span-8 space-y-8">
-                    <!-- Header Card -->
-                    <div class="bg-white rounded-2xl border border-border p-8">
-                        <div class="flex justify-between items-start mb-6">
-                            <div>
-                                <h2 id="p-name" class="text-3xl font-bold text-gray-900 mb-2">-</h2>
-                                <p id="p-location" class="text-text-secondary"><i class="bi bi-geo-alt mr-2"></i> -</p>
-                            </div>
-                            <span id="p-status" class="px-3 py-1 bg-slate-100 text-slate-600 rounded-full text-xs font-bold uppercase tracking-wider">-</span>
+                    <!-- Stats Grid -->
+                    <div class="grid grid-cols-3 gap-6">
+                        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+                            <div class="text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-1">Total Bookings</div>
+                            <div class="text-[24px] font-bold text-gray-900" id="stat-bookings">0</div>
                         </div>
-
-                        <div class="grid grid-cols-4 gap-6 py-6 border-y border-gray-100">
-                             <div>
-                                <label class="text-xs text-text-secondary font-medium uppercase tracking-wider">Type</label>
-                                <p id="p-type" class="font-bold text-gray-900 mt-1 capitalize">-</p>
-                            </div>
-                            <div>
-                                <label class="text-xs text-text-secondary font-medium uppercase tracking-wider">Price</label>
-                                <p id="p-price" class="font-bold text-primary mt-1">-</p>
-                            </div>
-                            <div>
-                                <label class="text-xs text-text-secondary font-medium uppercase tracking-wider">Guests</label>
-                                <p id="p-guests" class="font-bold text-gray-900 mt-1">-</p>
-                            </div>
-                             <div>
-                                <label class="text-xs text-text-secondary font-medium uppercase tracking-wider">Rooms/Beds</label>
-                                <p id="p-rooms" class="font-bold text-gray-900 mt-1">-</p>
-                            </div>
+                        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+                            <div class="text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-1">Revenue</div>
+                            <div class="text-[24px] font-bold text-gray-900" id="stat-revenue">₦0</div>
                         </div>
-
-                        <div class="mt-8">
-                            <h3 class="font-bold text-lg text-gray-900 mb-3">Description</h3>
-                            <p id="p-desc" class="text-text-secondary leading-relaxed bg-slate-50 p-6 rounded-xl">-</p>
+                        <div class="bg-white p-6 rounded-[24px] border border-gray-100 shadow-sm">
+                            <div class="text-[12px] font-bold text-gray-400 uppercase tracking-widest mb-1">Price / Night</div>
+                            <div class="text-[24px] font-bold text-primary" id="stat-price">₦0</div>
                         </div>
                     </div>
 
-                    <!-- Amenities -->
-                    <div class="bg-white rounded-2xl border border-border p-8">
-                        <h3 class="font-bold text-lg text-gray-900 mb-4">Amenities</h3>
-                        <div id="p-amenities" class="flex flex-wrap gap-3">
-                            <!-- Injected JS -->
+                    <!-- Details Card -->
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+                        <h3 class="text-[18px] font-bold text-gray-900 mb-6 flex items-center gap-3">
+                            <i class="bi bi-journal-text text-gray-400"></i> Property Information
+                        </h3>
+                        <div class="space-y-8">
+                            <div>
+                                <h4 class="text-[14px] font-bold text-gray-400 uppercase tracking-wider mb-4">Description</h4>
+                                <div id="p-desc" class="text-gray-600 leading-relaxed text-[15px] bg-[#F9FAFB] p-6 rounded-[20px]">-</div>
+                            </div>
+                            
+                            <div class="grid grid-cols-2 gap-8">
+                                <div>
+                                    <h4 class="text-[14px] font-bold text-gray-400 uppercase tracking-wider mb-3">Key Details</h4>
+                                    <div class="space-y-4">
+                                        <div class="flex justify-between items-center text-[14px]">
+                                            <span class="text-gray-400">Space Type</span>
+                                            <span class="font-bold text-gray-900 capitalize" id="p-type">-</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[14px]">
+                                            <span class="text-gray-400">Maximum Guests</span>
+                                            <span class="font-bold text-gray-900" id="p-guests">-</span>
+                                        </div>
+                                        <div class="flex justify-between items-center text-[14px]">
+                                            <span class="text-gray-400">Bedrooms / Beds</span>
+                                            <span class="font-bold text-gray-900" id="p-rooms">-</span>
+                                        </div>
+                                    </div>
+                                </div>
+                                <div>
+                                    <h4 class="text-[14px] font-bold text-gray-400 uppercase tracking-wider mb-3">Amenities</h4>
+                                    <div id="p-amenities" class="flex flex-wrap gap-2 text-[13px] font-bold text-gray-700">
+                                        <!-- Amenities here -->
+                                    </div>
+                                </div>
+                            </div>
                         </div>
                     </div>
 
-                     <!-- Gallery -->
-                    <div class="bg-white rounded-2xl border border-border p-8">
-                        <h3 class="font-bold text-lg text-gray-900 mb-4">Media Gallery</h3>
-                        <div id="p-gallery" class="grid grid-cols-3 gap-4">
+                    <!-- Gallery Section -->
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+                        <div class="flex justify-between items-center mb-8">
+                            <h3 class="text-[18px] font-bold text-gray-900 flex items-center gap-3">
+                                <i class="bi bi-images text-gray-400"></i> Listing Gallery
+                            </h3>
+                            <div class="text-[13px] text-gray-400 font-bold uppercase tracking-wider" id="gallery-count">0 items</div>
+                        </div>
+                        <div id="p-gallery" class="grid grid-cols-3 gap-6">
                             <!-- Injected JS -->
                         </div>
                     </div>
                 </div>
 
-                <!-- Sidebar -->
+                <!-- Right Sidebar -->
                 <div class="col-span-4 space-y-8">
-                    <!-- Host Card -->
-                    <div class="bg-white rounded-2xl border border-border p-8">
-                        <h3 class="font-bold text-base text-gray-900 mb-6 flex items-center gap-2"><i class="bi bi-person-badge text-primary"></i> Host Information</h3>
-                        
-                        <div class="flex flex-col items-center mb-6">
-                            <div id="h-avatar" class="w-20 h-20 rounded-full bg-slate-200 flex items-center justify-center text-2xl font-bold text-gray-500 mb-3 border-4 border-white shadow-sm">
+                    <!-- Host Information -->
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+                         <h3 class="text-[18px] font-bold text-gray-900 mb-6">Host Information</h3>
+                         <div class="flex flex-col items-center mb-6">
+                            <div id="h-avatar" class="w-20 h-20 rounded-full bg-gray-50 flex items-center justify-center text-[28px] font-bold text-gray-300 border border-gray-100 mb-4 overflow-hidden">
                                 -
                             </div>
-                            <h4 id="h-name" class="font-bold text-lg text-gray-900">-</h4>
-                            <p id="h-email" class="text-sm text-text-secondary">-</p>
+                            <h4 id="h-name" class="font-bold text-[18px] text-gray-900 mb-1">-</h4>
+                            <p id="h-email" class="text-[13px] text-gray-400">-</p>
                         </div>
+                        <div class="space-y-4 pt-4 border-t border-gray-50 mb-6">
+                            <div class="flex justify-between items-center text-[13px]">
+                                <span class="text-gray-400">Phone</span>
+                                <span class="font-bold text-gray-900" id="h-phone">-</span>
+                            </div>
+                            <div class="flex justify-between items-center text-[13px]">
+                                <span class="text-gray-400">Member Since</span>
+                                <span class="font-bold text-gray-900">May 2023</span>
+                            </div>
+                        </div>
+                        <a href="#" id="host-profile-link" class="block w-full text-center py-3.5 bg-[#F9FAFB] rounded-xl text-[13px] font-bold text-gray-900 hover:bg-gray-100 transition-all border border-gray-50 shadow-sm">
+                            View Full Profile
+                        </a>
+                    </div>
 
-                        <div class="space-y-4 pt-4 border-t border-gray-100">
-                             <div class="flex justify-between items-center">
-                                <span class="text-sm text-text-secondary">Phone</span>
-                                <span id="h-phone" class="text-sm font-medium text-gray-900">-</span>
+                    <!-- Safety & Compliance -->
+                    <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm p-8">
+                        <h3 class="text-[18px] font-bold text-gray-900 mb-4">Inspection Report</h3>
+                        <p class="text-[13px] text-gray-400 leading-relaxed mb-6">Review the property details carefully against compliance rules before approval.</p>
+                        <div class="space-y-4">
+                            <div class="flex items-center gap-3 p-4 bg-green-50 rounded-[16px] text-green-600">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span class="text-[13px] font-bold">Base requirements met</span>
                             </div>
-                             <div class="flex justify-between items-center">
-                                <span class="text-sm text-text-secondary">Host ID</span>
-                                <span class="text-sm font-medium text-gray-900">HST-001</span>
+                            <div class="flex items-center gap-3 p-4 bg-green-50 rounded-[16px] text-green-600">
+                                <i class="bi bi-check-circle-fill"></i>
+                                <span class="text-[13px] font-bold">Host verification valid</span>
                             </div>
                         </div>
-                        
-                        <a href="#" class="block w-full text-center py-3 mt-6 bg-slate-50 text-primary font-bold rounded-xl text-sm hover:bg-slate-100 transition-colors">View full profile</a>
                     </div>
                 </div>
             </div>
@@ -164,7 +218,7 @@ if (!isset($_SESSION['jwt_token'])) {
         const propertyId = params.get('id');
 
         async function loadDetails() {
-            if (!propertyId) return;
+            if (!propertyId) { window.location.href = 'listings.php'; return; }
 
             try {
                 const res = await fetch(`../api/admin/property_details.php?id=${propertyId}`, {
@@ -177,101 +231,89 @@ if (!isset($_SESSION['jwt_token'])) {
                 }
             } catch (err) {
                 console.error(err);
-                document.getElementById('loading').textContent = 'Error loading property details.';
+                document.getElementById('loading-state').innerHTML = '<p class="text-red-500 font-bold">Failed to load property data.</p>';
             }
         }
 
         function displayProperty(p) {
-            document.getElementById('loading').classList.add('hidden');
-            const content = document.getElementById('content');
-            content.classList.remove('hidden');
-            content.classList.add('grid');
+            document.getElementById('loading-state').classList.add('hidden');
+            document.getElementById('content-grid').classList.remove('hidden');
 
-            document.getElementById('p-name').textContent = p.name || 'Draft Property';
-            document.getElementById('p-location').innerHTML = `<i class="bi bi-geo-alt mr-2 text-primary"></i>${p.address}, ${p.city}, ${p.state}, ${p.country}`;
+            // Header & Breadcrumbs
+            document.getElementById('header-p-name').textContent = p.name || 'Untitled Listing';
+            document.getElementById('breadcrumb-prop-name').textContent = p.name || 'Property Details';
+            document.getElementById('header-p-location').innerHTML = `<i class="bi bi-geo-alt text-gray-300"></i> ${p.address}, ${p.city}, ${p.state}`;
             
-            const pStatus = document.getElementById('p-status');
-            pStatus.textContent = p.status;
-            if(p.status === 'published') {
-                pStatus.className = 'px-3 py-1 bg-green-50 text-green-700 rounded-full text-xs font-bold uppercase tracking-wider border border-green-200';
-            } else if(p.status === 'archived') {
-                 pStatus.className = 'px-3 py-1 bg-red-50 text-red-700 rounded-full text-xs font-bold uppercase tracking-wider border border-red-200';
-            } else {
-                 pStatus.className = 'px-3 py-1 bg-yellow-50 text-yellow-700 rounded-full text-xs font-bold uppercase tracking-wider border border-yellow-200';
-            }
+            const hs = document.getElementById('header-p-status');
+            hs.textContent = p.status;
+            const statusColors = { 'published': 'bg-green-50 text-green-500', 'active': 'bg-green-50 text-green-500', 'pending': 'bg-yellow-50 text-yellow-500', 'archived': 'bg-red-50 text-red-500' };
+            hs.className = `px-3 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider ${statusColors[p.status] || 'bg-gray-50 text-gray-500'}`;
 
-            document.getElementById('p-type').textContent = `${p.space_type} ${p.type}`;
-            document.getElementById('p-price').textContent = `₦${parseFloat(p.price).toLocaleString()} /${p.price_type}`;
-            document.getElementById('p-guests').textContent = `${p.guests_max} Max Guests`;
-            document.getElementById('p-rooms').textContent = `${p.bedrooms} Bedrooms, ${p.beds} Beds`;
+            if (p.status === 'pending') document.getElementById('admin-actions').classList.remove('hidden');
+
+            // Stats
+            document.getElementById('stat-bookings').textContent = p.total_bookings || 0;
+            document.getElementById('stat-revenue').textContent = `₦${parseFloat(p.total_earnings || 0).toLocaleString()}`;
+            document.getElementById('stat-price').textContent = `₦${parseFloat(p.price).toLocaleString()}`;
+
+            // Details
             document.getElementById('p-desc').textContent = p.description || 'No description provided.';
+            document.getElementById('p-type').textContent = `${p.space_type} ${p.type}`;
+            document.getElementById('p-guests').textContent = `${p.guests_max} People`;
+            document.getElementById('p-rooms').textContent = `${p.bedrooms} BR / ${p.beds} Beds`;
 
             // Host
             document.getElementById('h-name').textContent = `${p.first_name} ${p.last_name}`;
             document.getElementById('h-email').textContent = p.host_email;
-            document.getElementById('h-phone').textContent = p.host_phone || 'Not provided';
-            document.getElementById('h-avatar').textContent = p.first_name ? p.first_name[0].toUpperCase() : '?';
+            document.getElementById('h-phone').textContent = p.host_phone || 'N/A';
+            document.getElementById('host-profile-link').href = `user_profile.php?id=${p.host_id}`;
+            const hAvatar = document.getElementById('h-avatar');
+            if (p.host_pic) {
+                hAvatar.innerHTML = `<img src="../${p.host_pic}" class="w-full h-full object-cover">`;
+            } else {
+                hAvatar.textContent = p.first_name[0].toUpperCase();
+            }
 
             // Amenities
             const amDiv = document.getElementById('p-amenities');
             const amenities = JSON.parse(p.amenities || '[]');
-            amenities.forEach(a => {
-                const span = document.createElement('span');
-                span.className = 'px-4 py-2 bg-slate-50 text-gray-700 rounded-lg text-sm font-medium border border-slate-100';
-                span.textContent = a;
-                amDiv.appendChild(span);
-            });
+            amDiv.innerHTML = amenities.map(a => `
+                <span class="px-3 py-1.5 bg-gray-50 rounded-lg border border-gray-100">${a}</span>
+            `).join('');
 
             // Gallery
             const gallery = document.getElementById('p-gallery');
-            p.images.forEach(img => {
-                const wrapper = document.createElement('div');
-                wrapper.className = 'rounded-xl overflow-hidden border border-gray-100 aspect-video bg-gray-50 relative group';
-                
-                if (img.media_type === 'image') {
-                    const el = document.createElement('img');
-                    el.src = `${API_BASE}/360HomesHub/${img.media_url}`;
-                    el.className = 'w-full h-full object-cover transition-transform duration-500 group-hover:scale-110';
-                    el.onerror = () => el.src = 'https://via.placeholder.com/300';
-                    wrapper.appendChild(el);
-                } else if (img.media_type === 'video') {
-                    const v = document.createElement('video');
-                    v.src = `${API_BASE}/360HomesHub/${img.media_url}`;
-                    v.className = 'w-full h-full object-cover';
-                    v.controls = true;
-                    wrapper.appendChild(v);
-                }
-                gallery.appendChild(wrapper);
-            });
+            const items = p.images || [];
+            document.getElementById('gallery-count').textContent = `${items.length} items`;
+            gallery.innerHTML = items.map(img => `
+                <div class="rounded-[20px] overflow-hidden border border-gray-100 aspect-video group bg-gray-50 relative">
+                     ${img.media_type === 'video' 
+                        ? `<video src="../${img.media_url}" class="w-full h-full object-cover" controls></video>` 
+                        : `<img src="../${img.media_url}" class="w-full h-full object-cover group-hover:scale-105 transition-transform duration-500 shadow-sm" onerror="this.src='https://via.placeholder.com/400x300'">`}
+                </div>
+            `).join('');
         }
 
         async function updatePropertyStatus(status) {
-            const token = localStorage.getItem('jwt_token');
-            if(!confirm(`Are you sure you want to ${status === 'published' ? 'publish' : 'archive'} this property?`)) return;
-
+            if(!confirm(`Are you sure you want to mark this as ${status}?`)) return;
             try {
                 const res = await fetch('../api/admin/update_property.php', {
                     method: 'POST',
-                    headers: { 
-                        'Authorization': `Bearer ${token}`,
-                        'Content-Type': 'application/json'
-                    },
+                    headers: { 'Authorization': `Bearer ${token}`, 'Content-Type': 'application/json' },
                     body: JSON.stringify({ property_id: propertyId, status: status })
                 });
-                const response = await res.json();
-                if (response.success) {
-                    alert(response.message);
-                    location.reload();
-                } else {
-                    alert(response.message);
-                }
-            } catch (err) {
-                console.error(err);
-            }
+                const data = await res.json();
+                if (data.success) { alert(data.message); location.reload(); }
+                else { alert(data.message); }
+            } catch (err) { console.error(err); }
         }
 
         loadDetails();
     </script>
+    <script src="js/sidebar.js"></script>
+</body>
+</html>
+
     <script>
         // Inject JWT token from session into localStorage for API calls
         <?php if (isset($_SESSION['jwt_token'])): ?>

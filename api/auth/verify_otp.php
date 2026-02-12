@@ -29,7 +29,7 @@ try {
     }
 
     // Get user details
-    $stmt = $pdo->prepare("SELECT id, email, phone, auth_provider, onboarding_step FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, auth_provider, onboarding_step, avatar, role, is_verified FROM users WHERE id = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 
@@ -57,7 +57,10 @@ try {
         'auth_provider' => $user['auth_provider'],
         'email' => $user['email'],
         'phone' => $user['phone'],
-        'onboarding_step' => $newOnboardingStep
+        'onboarding_step' => $newOnboardingStep,
+        'role' => $user['role'],
+        'is_verified' => (bool)$user['is_verified'],
+        'avatar' => $user['avatar']
     ];
     $token = JWTManager::generateToken($jwtData);
 

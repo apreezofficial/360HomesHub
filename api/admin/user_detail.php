@@ -36,21 +36,48 @@ try {
     // Listings count
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM properties WHERE host_id = ?");
     $stmt->execute([$userId]);
-    $listingsCount = $stmt->fetchColumn();
+    $listingsCount = (int)$stmt->fetchColumn();
 
     // Bookings count (as guest)
     $stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE guest_id = ?");
     $stmt->execute([$userId]);
-    $bookingsCount = $stmt->fetchColumn();
+    $bookingsGuestCount = (int)$stmt->fetchColumn();
 
-    // Recent Activity (Last 5 bookings)
-    $stmt = $pdo->prepare("SELECT b.id, b.status, b.created_at, b.total_amount, p.name as property_name 
+    // Bookings received (as host)
+    $stmt = $pdo->prepare("SELECT COUNT(*) FROM bookings WHERE host_id = ?");
+    $stmt->execute([$userId]);
+    $bookingsHostCount = (int)$stmt->fetchColumn();
+
+    // Total spent (as guest)
+    $stmt = $pdo->prepare("SELECT SUM(total_amount) FROM bookings WHERE guest_id = ? AND status = 'confirmed'");
+    $stmt->execute([$userId]);
+    $totalSpent = (float)($stmt->fetchColumn() ?: 0);
+
+    // Total earnings (as host)
+    $stmt = $pdo->prepare("SELECT SUM(total_amount) FROM bookings WHERE host_id = ? AND status = 'confirmed'");
+    $stmt->execute([$userId]);
+    $totalEarnings = (float)($stmt->fetchColumn() ?: 0);
+
+    // Last booking date
+    $stmt = $pdo->prepare("SELECT created_at FROM bookings WHERE guest_id = ? OR host_id = ? ORDER BY created_at DESC LIMIT 1");
+    $stmt->execute([$userId, $userId]);
+    $lastBookingDate = $stmt->fetchColumn();
+
+    // 3. KYC
+    $stmt = $pdo->prepare("SELECT * FROM kyc WHERE user_id = ?");
+    $stmt->execute([$userId]);
+    $kycRecords = $stmt->fetchAll(PDO::FETCH_ASSOC);
+
+    // 4. Booking History
+    $stmt = $pdo->prepare("SELECT b.*, p.name as property_name, p.image_url as property_image,
+                                  u.first_name as host_first_name, u.last_name as host_last_name
                            FROM bookings b 
                            LEFT JOIN properties p ON b.property_id = p.id 
-                           WHERE b.guest_id = ? 
-                           ORDER BY b.created_at DESC LIMIT 5");
-    $stmt->execute([$userId]);
-    $recentActivity = $stmt->fetchAll(PDO::FETCH_ASSOC);
+                           LEFT JOIN users u ON b.host_id = u.id
+                           WHERE b.guest_id = ? OR b.host_id = ?
+                           ORDER BY b.created_at DESC LIMIT 12");
+    $stmt->execute([$userId, $userId]);
+    $bookingHistory = $stmt->fetchAll(PDO::FETCH_ASSOC);
 
     echo json_encode([
         'success' => true,
@@ -58,10 +85,14 @@ try {
             'user' => $user,
             'stats' => [
                 'listings' => $listingsCount,
-                'bookings' => $bookingsCount,
-                'total_spent' => 0 // Todo: Calculate from transactions
+                'bookings_guest' => $bookingsGuestCount,
+                'bookings_host' => $bookingsHostCount,
+                'total_spent' => $totalSpent,
+                'total_earnings' => $totalEarnings,
+                'last_booking_date' => $lastBookingDate
             ],
-            'recent_activity' => $recentActivity
+            'kyc' => $kycRecords,
+            'booking_history' => $bookingHistory
         ]
     ]);
 

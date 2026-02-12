@@ -22,7 +22,9 @@ try {
     
     // Fetch property details
     $stmt = $pdo->prepare("
-        SELECT p.*, u.email as host_email, u.first_name, u.last_name, u.phone as host_phone
+        SELECT p.*, u.email as host_email, u.first_name, u.last_name, u.phone as host_phone,
+               (SELECT COUNT(*) FROM bookings WHERE property_id = p.id) as total_bookings,
+               (SELECT SUM(total_amount) FROM bookings WHERE property_id = p.id AND payment_status = 'paid') as total_earnings
         FROM properties p 
         JOIN users u ON p.host_id = u.id 
         WHERE p.id = ?

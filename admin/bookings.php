@@ -47,57 +47,77 @@ if (!isset($_SESSION['jwt_token'])) {
     </script>
     <style>body { font-family: 'Outfit', sans-serif; }</style>
 </head>
-<body class="bg-white min-h-screen">
+<body class="bg-[#F9FAFB] min-h-screen font-outfit">
     <div class="flex min-h-screen">
-        <aside class="w-[240px] fixed h-full bg-white z-50"></aside>
+        <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
 
-        <main class="flex-1 ml-[240px] bg-gray-50 min-h-screen p-6">
+        <main class="flex-1 ml-[260px] min-h-screen p-8">
             <!-- Top Nav -->
-            <div class="flex justify-between items-center mb-8">
-                <div class="text-[13px] text-gray-400 font-medium">
-                    Management / <span class="text-gray-900">Bookings</span>
+            <div class="flex justify-between items-center mb-10">
+                <div class="text-[14px] text-gray-400">
+                    Management / <span class="text-gray-900 font-medium">Bookings</span>
+                </div>
+                <div class="flex-1 max-w-[500px] mx-8">
+                    <div class="relative">
+                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                        <input type="text" id="search-input" placeholder="Search for guest name, property or booking ID..." 
+                               class="w-full bg-white border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/5 shadow-sm transition-all">
+                    </div>
                 </div>
                 <div class="flex items-center gap-4">
-                     <div class="w-10 h-10 rounded-full bg-slate-100 flex items-center justify-center cursor-pointer">
-                        <i class="bi bi-bell text-xl text-gray-600"></i>
+                     <div class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center cursor-pointer shadow-sm relative">
+                        <i class="bi bi-bell text-[18px] text-gray-400"></i>
+                        <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                     </div>
                 </div>
             </div>
 
-            <div class="flex justify-between items-center mb-6">
-                <h1 class="text-2xl font-bold text-gray-900">Booking Management</h1>
-                 <div class="relative inline-block">
-                    <select class="appearance-none bg-white border border-border px-4 py-2 rounded-lg text-sm font-medium focus:outline-none pr-10 cursor-pointer">
-                        <option>All bookings</option>
-                        <option>Confirmed</option>
-                        <option>Pending</option>
-                        <option>Cancelled</option>
-                    </select>
-                    <i class="bi bi-chevron-down absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 pointer-events-none text-xs"></i>
+            <div class="flex justify-between items-end mb-8">
+                <div>
+                    <h1 class="text-[32px] font-bold text-gray-900 mb-2">Booking Management</h1>
+                    <p class="text-gray-400 text-[15px]">Manage all space reservations across the platform.</p>
+                </div>
+                <div class="flex gap-2 bg-gray-100 p-1 rounded-xl">
+                    <button class="px-6 py-2.5 text-[13px] font-bold rounded-lg bg-white shadow-sm text-gray-900 filter-btn active" data-status="all">All bookings</button>
+                    <button class="px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn" data-status="confirmed">Confirmed</button>
+                    <button class="px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn" data-status="pending">Pending</button>
+                    <button class="px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn" data-status="cancelled">Cancelled</button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-2xl border border-border overflow-hidden min-h-[500px]">
+            <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
                 <table class="w-full text-left">
-                    <thead class="bg-white border-b border-border">
-                        <tr class="text-[13px] text-text-secondary">
-                            <th class="py-4 px-6 font-medium">Property</th>
-                            <th class="py-4 px-6 font-medium">Guest</th>
-                            <th class="py-4 px-6 font-medium">Dates</th>
-                            <th class="py-4 px-6 font-medium">Total Price</th>
-                            <th class="py-4 px-6 font-medium">Status</th>
-                            <th class="py-4 px-6 font-medium text-right">Action</th>
+                    <thead>
+                        <tr class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 bg-gray-50/30">
+                            <th class="py-4 px-8">Property</th>
+                            <th class="py-4 px-8">Guest</th>
+                            <th class="py-4 px-8">Stay dates</th>
+                            <th class="py-4 px-8">Amount</th>
+                            <th class="py-4 px-8 text-center">Status</th>
+                            <th class="py-4 px-8 text-right">Action</th>
                         </tr>
                     </thead>
-                    <tbody id="bookings-table" class="divide-y divide-border">
+                    <tbody id="bookings-table" class="divide-y divide-gray-50 text-[13px]">
                         <!-- Loaded via JS -->
                     </tbody>
                 </table>
-                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-20">
-                     <div class="w-16 h-16 bg-slate-50 rounded-full flex items-center justify-center mb-4">
-                        <i class="bi bi-calendar-x text-2xl text-gray-300"></i>
+                <div id="empty-state" class="hidden flex flex-col items-center justify-center py-32">
+                     <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
+                        <i class="bi bi-calendar-x text-[32px] text-gray-200"></i>
                     </div>
-                    <p class="text-gray-500 text-sm">No bookings found</p>
+                    <p class="text-gray-400 font-medium">No bookings match your current filter.</p>
+                </div>
+                
+                <div class="p-6 border-t border-gray-50 flex justify-between items-center text-[13px] text-gray-500 font-medium">
+                    <div id="pagination-info">Showing 0 out of 0 list</div>
+                    <div class="flex items-center gap-4 text-gray-900">
+                        <button class="flex items-center gap-2 grayscale hover:grayscale-0"><i class="bi bi-chevron-left"></i> Prev</button>
+                        <div class="flex items-center gap-2">
+                            <span class="bg-gray-100 px-3 py-1.5 rounded-lg border border-gray-100">1</span>
+                            <span class="text-gray-400">of 1</span>
+                        </div>
+                        <button class="flex items-center gap-2 grayscale hover:grayscale-0">Next <i class="bi bi-chevron-right"></i></button>
+                    </div>
                 </div>
             </div>
         </main>
@@ -107,6 +127,9 @@ if (!isset($_SESSION['jwt_token'])) {
         const token = localStorage.getItem('jwt_token');
         if (!token) window.location.href = 'login.php';
 
+        let allBookings = [];
+        let currentStatusFilter = 'all';
+
         async function fetchBookings() {
             try {
                 const res = await fetch('../api/admin/bookings.php', {
@@ -114,90 +137,109 @@ if (!isset($_SESSION['jwt_token'])) {
                 });
                 const data = await res.json();
                 
-                const tbody = document.getElementById('bookings-table');
-                const emptyState = document.getElementById('empty-state');
-                tbody.innerHTML = '';
-
-                if (!data.success || !data.data.bookings || data.data.bookings.length === 0) {
-                    emptyState.classList.remove('hidden');
-                    return;
+                if (data.success) {
+                    allBookings = data.data.bookings || [];
+                    renderBookings();
                 }
-                emptyState.classList.add('hidden');
-
-                data.data.bookings.forEach(b => {
-                    const tr = document.createElement('tr');
-                    tr.className = 'hover:bg-slate-50 transition-colors text-[14px] group/row';
-
-                    // improved Status Logic
-                    const statusMap = {
-                        'pending': { text: 'Pending Approval', class: 'bg-yellow-50 text-yellow-700 border-yellow-200' },
-                        'confirmed': { text: 'Confirmed', class: 'bg-green-50 text-green-700 border-green-200' },
-                        'cancelled': { text: 'Cancelled', class: 'bg-red-50 text-red-700 border-red-200' },
-                        'rejected': { text: 'Rejected', class: 'bg-red-50 text-red-700 border-red-200' },
-                        'completed': { text: 'Completed', class: 'bg-blue-50 text-blue-700 border-blue-200' },
-                        'awaiting_payment': { text: 'Awaiting Payment', class: 'bg-orange-50 text-orange-700 border-orange-200' }
-                    };
-                    const st = statusMap[b.status] || { text: b.status, class: 'bg-gray-100 text-gray-600 border-gray-200' };
-
-                    const checkIn = new Date(b.check_in).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    const checkOut = new Date(b.check_out).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' });
-                    
-                    const propName = b.property_name || 'Unknown Property';
-                    // Robust Name Handling
-                    const gFirst = b.guest_first_name && b.guest_first_name !== 'null' ? b.guest_first_name : 'N/A';
-                    const gLast = b.guest_last_name && b.guest_last_name !== 'null' ? b.guest_last_name : '';
-                    const guestName = `${gFirst} ${gLast}`.trim();
-
-                    tr.innerHTML = `
-                        <td class="py-4 px-6">
-                            <div class="font-bold text-gray-900">${propName}</div>
-                            <div class="text-xs text-gray-500">${b.property_city || ''}, ${b.property_state || ''}</div>
-                        </td>
-                        <td class="py-4 px-6">
-                            <div class="font-medium text-gray-900">${guestName}</div>
-                            <div class="text-xs text-gray-500">${b.guest_email || 'No email'}</div>
-                        </td>
-                        <td class="py-4 px-6 text-gray-600">
-                            <div>From: <span class="font-medium text-gray-900">${checkIn}</span></div>
-                            <div>To: <span class="font-medium text-gray-900">${checkOut}</span></div>
-                        </td>
-                        <td class="py-4 px-6 font-bold text-gray-900">₦${parseFloat(b.total_amount).toLocaleString()}</td>
-                        <td class="py-4 px-6">
-                            <span class="px-2.5 py-1 rounded-md text-[12px] font-bold uppercase border ${st.class}">${st.text}</span>
-                        </td>
-                        <td class="py-4 px-6 text-right relative">
-                            <div class="relative inline-block text-left">
-                                <button onclick="toggleDropdown(${b.id})" class="p-2 rounded-full hover:bg-gray-100 transition-colors text-gray-400 hover:text-primary focus:outline-none">
-                                    <i class="bi bi-three-dots-vertical"></i>
-                                </button>
-                                <div id="dropdown-${b.id}" class="hidden absolute right-0 mt-2 w-48 rounded-lg shadow-lg bg-white ring-1 ring-black ring-opacity-5 z-20 overflow-hidden transform origin-top-right transition-all">
-                                    <div class="py-1">
-                                        <a href="booking_details.php?id=${b.id}" class="group flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
-                                            <i class="bi bi-eye mr-3 text-gray-400 group-hover:text-primary"></i>
-                                            View Details
-                                        </a>
-                                        <a href="#" onclick="alert('Modify Logic Modal')" class="group flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-blue-600 transition-colors">
-                                            <i class="bi bi-pencil mr-3 text-gray-400 group-hover:text-blue-600"></i>
-                                            Modify Booking
-                                        </a>
-                                        <a href="#" onclick="generatePaymentLink(${b.id}, ${b.total_amount})" class="group flex items-center px-4 py-2.5 text-sm text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors border-t border-gray-100">
-                                            <i class="bi bi-credit-card mr-3 text-gray-400 group-hover:text-green-600"></i>
-                                            Generate Payment Link
-                                        </a>
-                                    </div>
-                                </div>
-                            </div>
-                        </td>
-                    `;
-                    tbody.appendChild(tr);
-                });
-                
             } catch (err) {
                 console.error(err);
             }
         }
 
-        // Global functions
+        function renderBookings() {
+            const tbody = document.getElementById('bookings-table');
+            const emptyState = document.getElementById('empty-state');
+            tbody.innerHTML = '';
+
+            const filtered = allBookings.filter(b => {
+                const matchesStatus = currentStatusFilter === 'all' || b.status === currentStatusFilter;
+                const search = document.getElementById('search-input').value.toLowerCase();
+                const guestName = `${b.guest_first_name} ${b.guest_last_name}`.toLowerCase();
+                const matchesSearch = !search || guestName.includes(search) || b.property_name.toLowerCase().includes(search) || b.id.toString().includes(search);
+                return matchesStatus && matchesSearch;
+            });
+
+            if (filtered.length === 0) {
+                emptyState.classList.remove('hidden');
+                document.getElementById('pagination-info').textContent = 'Showing 0 listings';
+                return;
+            }
+
+            emptyState.classList.add('hidden');
+            filtered.forEach(b => {
+                const tr = document.createElement('tr');
+                tr.className = 'hover:bg-gray-50/50 transition-colors group';
+
+                const statusMaps = {
+                    'pending': { color: 'yellow' },
+                    'confirmed': { color: 'green' },
+                    'cancelled': { color: 'red' },
+                    'completed': { color: 'blue' },
+                    'awaiting_payment': { color: 'orange' }
+                };
+                const st = statusMaps[b.status] || { color: 'gray' };
+
+                tr.innerHTML = `
+                    <td class="py-5 px-8">
+                        <div class="flex items-center gap-3">
+                            <div class="w-10 h-10 rounded-lg bg-gray-100 overflow-hidden shrink-0">
+                                <img src="${b.property_image ? '../' + b.property_image : 'https://via.placeholder.com/100'}" class="w-full h-full object-cover">
+                            </div>
+                            <div>
+                                <div class="font-bold text-gray-900">${b.property_name || 'Property'}</div>
+                                <div class="text-[11px] text-gray-400 mt-0.5 uppercase tracking-tighter">ID: BK-${b.id.toString().padStart(6, '0')}</div>
+                            </div>
+                        </div>
+                    </td>
+                    <td class="py-5 px-8">
+                        <div class="font-bold text-gray-900">${b.guest_first_name} ${b.guest_last_name}</div>
+                        <div class="text-[12px] text-gray-400">${b.guest_email}</div>
+                    </td>
+                    <td class="py-5 px-8 text-gray-500 font-medium">
+                        ${new Date(b.check_in).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} - ${new Date(b.check_out).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}
+                    </td>
+                    <td class="py-5 px-8 font-bold text-gray-900">₦${parseFloat(b.total_amount).toLocaleString()}</td>
+                    <td class="py-5 px-8 text-center">
+                        <span class="px-3 py-1.5 rounded-full text-[11px] font-bold uppercase bg-${st.color}-50 text-${st.color}-500">${b.status.replace('_', ' ')}</span>
+                    </td>
+                    <td class="py-5 px-8 text-right relative">
+                         <button onclick="toggleDropdown(${b.id})" class="p-2 text-gray-300 hover:text-gray-900 transition-colors"><i class="bi bi-three-dots-vertical"></i></button>
+                         <div id="dropdown-${b.id}" class="hidden absolute right-8 mt-2 w-52 rounded-2xl shadow-xl bg-white ring-1 ring-black ring-opacity-5 z-20 overflow-hidden border border-gray-50 text-left">
+                            <div class="py-2">
+                                <a href="booking_details.php?id=${b.id}" class="flex items-center px-5 py-3 text-[13px] font-bold text-gray-700 hover:bg-gray-50 hover:text-primary transition-colors">
+                                    <i class="bi bi-eye mr-3 text-gray-400"></i> View Details
+                                </a>
+                                <button onclick="generatePaymentLink(${b.id})" class="w-full flex items-center px-5 py-3 text-[13px] font-bold text-gray-700 hover:bg-gray-50 hover:text-green-600 transition-colors">
+                                    <i class="bi bi-credit-card mr-3 text-gray-400"></i> Generate Link
+                                </button>
+                                <button onclick="alert('Cancel logic')" class="w-full flex items-center px-5 py-3 text-[13px] font-bold text-red-500 hover:bg-red-50 transition-colors border-t border-gray-50">
+                                    <i class="bi bi-trash mr-3 text-red-300"></i> Cancel Booking
+                                </button>
+                            </div>
+                        </div>
+                    </td>
+                `;
+                tbody.appendChild(tr);
+            });
+            document.getElementById('pagination-info').textContent = `Showing ${filtered.length} out of ${allBookings.length} list`;
+        }
+
+        // Filtering logic
+        document.querySelectorAll('.filter-btn').forEach(btn => {
+            btn.addEventListener('click', () => {
+                document.querySelectorAll('.filter-btn').forEach(b => {
+                    b.classList.remove('bg-white', 'shadow-sm', 'text-gray-900', 'active');
+                    b.classList.add('text-gray-400');
+                });
+                btn.classList.add('bg-white', 'shadow-sm', 'text-gray-900', 'active');
+                btn.classList.remove('text-gray-400');
+                currentStatusFilter = btn.dataset.status;
+                renderBookings();
+            });
+        });
+
+        document.getElementById('search-input').addEventListener('input', renderBookings);
+
         function toggleDropdown(id) {
             document.querySelectorAll('[id^="dropdown-"]').forEach(el => {
                 if (el.id !== `dropdown-${id}`) el.classList.add('hidden');
@@ -207,24 +249,43 @@ if (!isset($_SESSION['jwt_token'])) {
             window.event.stopPropagation();
         }
 
-        async function generatePaymentLink(bookingId, amount) {
-             if(!confirm('Generate payment link for ₦' + parseFloat(amount).toLocaleString() + '?')) return;
-             
-             // Placeholder for API call
-             // In future, call api/admin/generate_payment_link.php
-             alert('Payment link generated (placeholder): https://36homes.com/pay/' + btoa(bookingId));
-        }
-        
-        // Close dropdowns logic
-        document.addEventListener('click', function(event) {
-            if (!event.target.closest('td.text-right')) {
-                document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
+        async function generatePaymentLink(bookingId) {
+            try {
+                const res = await fetch(`../api/bookings/generate_payment_link.php`, {
+                    method: 'POST',
+                    headers: { 
+                        'Authorization': `Bearer ${token}`,
+                        'Content-Type': 'application/json'
+                    },
+                    body: JSON.stringify({ booking_id: bookingId })
+                });
+                const data = await res.json();
+                if (data.success) {
+                    const link = data.data.payment_link;
+                    const copy = confirm(`Payment link generated:\n${link}\n\nClick OK to copy to clipboard.`);
+                    if (copy) {
+                        navigator.clipboard.writeText(link);
+                        alert('Link copied!');
+                    }
+                    fetchBookings(); // Refresh to show may be status change if any
+                } else {
+                    alert(data.message);
+                }
+            } catch (err) {
+                console.error(err);
             }
+        }
+
+        document.addEventListener('click', () => {
+            document.querySelectorAll('[id^="dropdown-"]').forEach(el => el.classList.add('hidden'));
         });
 
-        // Initialize
         fetchBookings();
     </script>
+    <script src="js/sidebar.js"></script>
+</body>
+</html>
+
     <script>
         // Inject JWT token from session into localStorage for API calls
         <?php if (isset($_SESSION['jwt_token'])): ?>
