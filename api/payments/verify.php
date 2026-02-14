@@ -113,6 +113,16 @@ if ($status === 'success') {
             $admin_id = 1;
             sendNotification($admin_id, "Payment Confirmed", "Payment for booking #$bookingId has been confirmed via " . ucfirst($gateway) . ". Amount: ₦" . number_format($booking_details['total_amount'], 2), "important");
 
+            // --- SEND & LOG EMAILS (Guest, Host, Admin) ---
+            require_once __DIR__ . '/../../utils/payment_email_helper.php';
+            PaymentEmailHelper::sendPaymentEmails(
+                $pdo, 
+                $bookingId, 
+                $booking_details['total_amount'], 
+                $reference, 
+                $gateway
+            );
+
             // Redirect to success page instead of showing JSON
             $app_url = defined('APP_URL') ? APP_URL : 'http://localhost/360HomesHub';
             header("Location: {$app_url}/payment_result.php?status=success&booking_id={$bookingId}&amount=" . $booking_details['total_amount']);

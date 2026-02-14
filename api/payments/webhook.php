@@ -178,24 +178,15 @@ function processPaymentSuccess($bookingId, $reference, $amount, $gateway, $payme
         // Admin
         sendNotification(1, "Payment Confirmed via Webhook", "Booking #{$bookingId} payment confirmed via {$gateway}.", "normal");
         
-        // Send email to Guest
-        $guest_stmt = $pdo->prepare("SELECT email, first_name FROM users WHERE id = ?");
-        $guest_stmt->execute([$booking['guest_id']]);
-        $guest = $guest_stmt->fetch();
-        
-        if ($guest && $guest['email']) {
-            require_once __DIR__ . '/../../utils/email.php';
-            $subject = "Payment Receipt for Booking #{$bookingId}";
-            $html = "
-                <h2>Payment Successful!</h2>
-                <p>Hi {$guest['first_name']},</p>
-                <p>We have received your payment of ₦" . number_format($amount, 2) . " for booking #{$bookingId}.</p>
-                <p>Your booking is now confirmed.</p>
-                <p><strong>Reference:</strong> {$reference}</p>
-                <p>Thank you for choosing 360HomesHub!</p>
-            ";
-            send_email($guest['email'], null, $subject, $html);
-        }
+        // --- SEND & LOG EMAILS (Guest, Host, Admin) ---
+        require_once __DIR__ . '/../../utils/payment_email_helper.php';
+        PaymentEmailHelper::sendPaymentEmails(
+            $pdo, 
+            $bookingId, 
+            $amount, 
+            $reference, 
+            $gateway
+        );
 
     } catch (Exception $e) {
         $pdo->rollBack();
