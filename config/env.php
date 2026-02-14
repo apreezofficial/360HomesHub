@@ -35,6 +35,8 @@ if ($host === 'localhost' || $host === '127.0.0.1') {
     $base_url .= '/360HomesHub';
 }
 define('BASE_URL', $base_url);
+define('APP_URL', $base_url); // Alias for consistency
+define('ADMIN_EMAIL', 'apreezofficial@gmail.com'); // Admin email for notifications
 
 // Google OAuth 2.0 Configuration
 define('GOOGLE_CLIENT_ID', 'YOUR_GOOGLE_CLIENT_ID');
