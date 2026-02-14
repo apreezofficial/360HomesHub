@@ -12,12 +12,12 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 
 $input = json_decode(file_get_contents('php://input'), true);
 
-$amount = $input['amount'] ?? null;
+// Amount is NO LONGER sent by frontend - we calculate it from the database
 $gateway = $input['gateway'] ?? 'paystack'; // Default to paystack
 $booking_id = $input['booking_id'] ?? null;
 
-if (!$amount || !$booking_id) {
-    send_error('Amount and booking ID are required.', [], 400);
+if (!$booking_id) {
+    send_error('Booking ID is required.', [], 400);
 }
 
 $email = $userData['email'] ?? 'guest@example.com';
@@ -33,11 +33,10 @@ if (!$booking) {
     send_error('Booking not found.', [], 404);
 }
 
-if ($booking['status'] === 'confirmed') {
+if ($booking['status'] === 'confirmed' || $booking['status'] === 'paid') {
     send_success('This booking has already been paid for.', [
         'booking_id' => $booking_id,
-        'status' => $booking['status'],
-        'amount' => $booking['total_amount']
+        'status' => $booking['status']
     ]);
     exit();
 }
@@ -45,6 +44,9 @@ if ($booking['status'] === 'confirmed') {
 if ($booking['status'] !== 'approved') {
     send_error("Payment cannot be initialized. Booking status: " . $booking['status'] . ". Only approved bookings can be paid for.", [], 400);
 }
+
+// SECURITY: Calculate amount from database, never trust frontend
+$amount = $booking['total_amount'];
 
 if ($gateway === 'paystack') {
     $paystack = new PaystackService();

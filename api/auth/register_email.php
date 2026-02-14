@@ -5,6 +5,7 @@ require_once __DIR__ . '/../../config/env.php';
 require_once __DIR__ . '/../../utils/db.php';
 require_once __DIR__ . '/../../utils/response.php';
 require_once __DIR__ . '/../../utils/otp.php';
+require_once __DIR__ . '/../../utils/activity_logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     send_error('Invalid request method.', [], 405);
@@ -45,10 +46,31 @@ try {
     }
 
     $pdo->commit();
+    
+    // Log successful registration
+    ActivityLogger::logUser(
+        $userId,
+        'registered_email',
+        [
+            'email' => $email,
+            'auth_provider' => 'email'
+        ]
+    );
+    
     send_success('Registration successful. OTP sent to your email for verification.', ['user_id' => $userId]);
 
 } catch (Exception $e) {
     $pdo->rollBack();
     error_log("Email registration error: " . $e->getMessage());
+    
+    ActivityLogger::log(
+        null,
+        'registration_failed',
+        "Email registration failed",
+        'user',
+        null,
+        ['email' => $email, 'error' => $e->getMessage()]
+    );
+    
     send_error('Registration failed: ' . $e->getMessage(), [], 500);
 }

@@ -1,6 +1,7 @@
 <?php
 
 require_once __DIR__ . '/../../vendor/autoload.php';
+require_once __DIR__ . '/../../utils/activity_logger.php';
 
 if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
     send_error('Invalid request method.', [], 405);
@@ -30,6 +31,15 @@ if (!empty($email)) {
 }
 
 if (!$user || !password_verify($password, $user['password_hash'])) {
+    // Log failed login attempt
+    ActivityLogger::log(
+        null,
+        'login_failed',
+        "Failed login attempt",
+        'user',
+        null,
+        ['email' => $email, 'phone' => $phone, 'reason' => 'invalid_credentials']
+    );
     send_error('Invalid credentials.', [], 401);
 }
 
@@ -52,6 +62,17 @@ $jwtData = [
     'avatar' => $user['avatar']
 ];
 $token = JWTManager::generateToken($jwtData);
+
+// Log successful login
+ActivityLogger::logUser(
+    $user['id'],
+    'logged_in',
+    [
+        'email' => $user['email'],
+        'phone' => $user['phone'],
+        'auth_provider' => $user['auth_provider']
+    ]
+);
 
 send_success('Login successful.', [
     'token' => $token, 

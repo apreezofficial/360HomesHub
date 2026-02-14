@@ -57,4 +57,19 @@ class PaystackService {
         $result = json_decode($response, true);
         return ($result['status'] ?? false) ? $result['data'] : null;
     }
+
+    public function verifyWebhook(): bool {
+        // Retrieve the request's body
+        $input = @file_get_contents("php://input");
+        
+        // Retrieve the signature sent by Paystack
+        $signature = $_SERVER['HTTP_X_PAYSTACK_SIGNATURE'] ?? '';
+
+        // Confirm the signature is valid
+        if (!$signature || $signature !== hash_hmac('sha512', $input, $this->secretKey)) {
+            return false;
+        }
+
+        return true;
+    }
 }

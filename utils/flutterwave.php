@@ -65,4 +65,18 @@ class FlutterwaveService {
         $result = json_decode($response, true);
         return ($result['status'] === 'success') ? $result['data'] : null;
     }
+
+    public function verifyWebhook(): bool {
+        // Retrieve the signature sent by Flutterwave
+        $signature = $_SERVER['HTTP_VERIF_HASH'] ?? '';
+
+        // Retrieve the secret hash from config
+        $secretHash = defined('FLUTTERWAVE_SECRET_HASH') ? FLUTTERWAVE_SECRET_HASH : '';
+
+        if (!$signature || !$secretHash || $signature !== $secretHash) {
+            return false;
+        }
+
+        return true;
+    }
 }

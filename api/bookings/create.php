@@ -179,8 +179,75 @@ try {
         $property_name_stmt->execute();
         $property_name = $property_name_stmt->fetchColumn() ?: 'a property';
 
-        // Notify Host (Important)
+        // Get host email for email notification
+        $host_email_stmt = $pdo->prepare("SELECT email, first_name, last_name FROM users WHERE id = ?");
+        $host_email_stmt->execute([$host_id]);
+        $host_info = $host_email_stmt->fetch(PDO::FETCH_ASSOC);
+
+        // Notify Host (Important) - In-app notification
         sendNotification($host_id, "New Booking Request", "A new booking request has been made for your property: {$property_name} from {$check_in_date->format('Y-m-d')} to {$check_out_date->format('Y-m-d')}.", 'important');
+
+        // Send Email to Host (HIGHEST PRIORITY)
+        if ($host_info && $host_info['email']) {
+            require_once __DIR__ . '/../../utils/email.php';
+            
+            $host_name = trim(($host_info['first_name'] ?? '') . ' ' . ($host_info['last_name'] ?? '')) ?: 'Host';
+            $email_subject = "🔔 New Booking Request for {$property_name}";
+            $email_html = "
+                <div style='font-family: Arial, sans-serif; max-width: 600px; margin: 0 auto;'>
+                    <h2 style='color: #4f46e5;'>New Booking Request!</h2>
+                    <p>Hi {$host_name},</p>
+                    <p>You have received a new booking request for your property <strong>{$property_name}</strong>.</p>
+                    
+                    <div style='background-color: #f3f4f6; padding: 20px; border-radius: 8px; margin: 20px 0;'>
+                        <h3 style='margin-top: 0;'>Booking Details:</h3>
+                        <p><strong>Check-in:</strong> {$check_in_date->format('F d, Y')}</p>
+                        <p><strong>Check-out:</strong> {$check_out_date->format('F d, Y')}</p>
+                        <p><strong>Nights:</strong> {$nights}</p>
+                        <p><strong>Guests:</strong> {$adults} Adults, {$children} Children</p>
+                        <p><strong>Rooms:</strong> {$rooms}</p>
+                        <p><strong>Total Amount:</strong> ₦" . number_format($total_amount, 2) . "</p>
+                    </div>
+                    
+                    <p>Please log in to your dashboard to review and approve or reject this booking request.</p>
+                    
+                    <p style='margin-top: 30px;'>
+                        <a href='" . (defined('APP_URL') ? APP_URL : 'http://localhost/360HomesHub') . "/admin/bookings.php' 
+                           style='background-color: #4f46e5; color: white; padding: 12px 24px; text-decoration: none; border-radius: 6px; display: inline-block;'>
+                            View Booking Request
+                        </a>
+                    </p>
+                    
+                    <p style='color: #6b7280; font-size: 14px; margin-top: 30px;'>
+                        This is an automated email from 360HomesHub. Please do not reply to this email.
+                    </p>
+                </div>
+            ";
+            
+            $email_result = send_email($host_info['email'], null, $email_subject, $email_html);
+            
+            // Log email sending attempt
+            if ($email_result === true) {
+                ActivityLogger::log(
+                    $host_id,
+                    'email_sent',
+                    "Booking request email sent to host",
+                    'booking',
+                    $booking_id,
+                    ['email' => $host_info['email'], 'subject' => $email_subject]
+                );
+            } else {
+                ActivityLogger::log(
+                    $host_id,
+                    'email_failed',
+                    "Failed to send booking request email to host",
+                    'booking',
+                    $booking_id,
+                    ['email' => $host_info['email'], 'error' => $email_result]
+                );
+                error_log("Failed to send email to host {$host_id}: " . $email_result);
+            }
+        }
 
         // Notify Guest (Normal)
         sendNotification($guest_id, "Booking Request Sent", "Your booking request for {$property_name} has been submitted. It is pending host approval.", 'normal');
