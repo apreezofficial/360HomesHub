@@ -29,7 +29,7 @@ try {
     }
 
     // Get user details
-    $stmt = $pdo->prepare("SELECT id, email, phone, auth_provider, onboarding_step, avatar, role, is_verified FROM users WHERE id = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, auth_provider, onboarding_step, avatar, role, status, message_disabled, booking_disabled FROM users WHERE id = ?");
     $stmt->execute([$userId]);
     $user = $stmt->fetch();
 
@@ -42,7 +42,7 @@ try {
 
     // Determine next onboarding step
     if (($user['auth_provider'] === 'email' || $user['auth_provider'] === 'phone') && $currentOnboardingStep === 'otp') {
-        $newOnboardingStep = 'profile'; // After OTP, user should complete their profile
+        $newOnboardingStep = 'password'; // After OTP, user must set a password
     }
 
     // Update onboarding step if changed
@@ -59,7 +59,9 @@ try {
         'phone' => $user['phone'],
         'onboarding_step' => $newOnboardingStep,
         'role' => $user['role'],
-        'is_verified' => (bool)$user['is_verified'],
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
         'avatar' => $user['avatar']
     ];
     $token = JWTManager::generateToken($jwtData);

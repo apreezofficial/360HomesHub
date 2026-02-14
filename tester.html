@@ -454,6 +454,8 @@
             { cat: 'Admin', name: 'Stats', path: 'api/admin/stats.php', method: 'GET' },
             { cat: 'Admin', name: 'Users', path: 'api/admin/users.php', method: 'GET' },
             { cat: 'Admin', name: 'Create User', path: 'api/admin/create_user.php', method: 'POST', body: { email: 'newuser@example.com', password: 'password', role: 'user' } },
+            { cat: 'Admin', name: 'Activity Logs', path: 'api/admin/activity_logs.php?limit=50&offset=0', method: 'GET' },
+            { cat: 'Admin', name: 'Activity Logs (Filtered)', path: 'api/admin/activity_logs.php?action_type=booking&limit=20', method: 'GET' },
             { cat: 'Admin', name: 'KYC List', path: 'api/admin/kyc_list.php', method: 'GET' },
             { cat: 'Admin', name: 'Approve KYC', path: 'api/admin/approve_kyc.php', method: 'POST', body: { kyc_id: 1 } },
             { cat: 'Admin', name: 'Reject KYC', path: 'api/admin/reject_kyc.php', method: 'POST', body: { kyc_id: 1, admin_note: 'ID is blurry' } },

@@ -11,6 +11,7 @@ require_once __DIR__ . '/../../vendor/autoload.php';
 require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
+require_once __DIR__ . '/../../utils/activity_logger.php'; // Activity logger
 
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
 
@@ -81,6 +82,14 @@ try {
     $property = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$property) {
+        ActivityLogger::log(
+            $guest_id,
+            'booking_failed',
+            "Failed to create booking - Property not found",
+            'property',
+            $property_id,
+            ['reason' => 'property_not_found']
+        );
         send_error("Property not found.", [], 404);
     }
 
@@ -146,6 +155,24 @@ try {
     if ($stmt->execute()) {
         $booking_id = $pdo->lastInsertId();
 
+        // Log successful booking creation
+        ActivityLogger::logBooking(
+            $guest_id,
+            'created',
+            $booking_id,
+            [
+                'property_id' => $property_id,
+                'host_id' => $host_id,
+                'check_in' => $check_in_date->format('Y-m-d'),
+                'check_out' => $check_out_date->format('Y-m-d'),
+                'nights' => $nights,
+                'adults' => $adults,
+                'children' => $children,
+                'rooms' => $rooms,
+                'total_amount' => round($total_amount, 2)
+            ]
+        );
+
         // --- Send Notifications ---
         $property_name_stmt = $pdo->prepare("SELECT name FROM properties WHERE id = :property_id");
         $property_name_stmt->bindParam(':property_id', $property_id);
@@ -189,13 +216,37 @@ try {
 
         send_success("Booking request created successfully.", ["booking" => $created_booking_data], 201);
     } else {
+        ActivityLogger::log(
+            $guest_id,
+            'booking_creation_failed',
+            "Failed to execute booking creation query",
+            'booking',
+            null,
+            ['property_id' => $property_id]
+        );
         send_error("Failed to create booking request.", [], 500);
     }
 
 } catch (PDOException $e) {
     error_log("Database error during booking creation: " . $e->getMessage());
+    ActivityLogger::log(
+        $guest_id ?? null,
+        'booking_db_error',
+        "Database error during booking creation",
+        'booking',
+        null,
+        ['error' => $e->getMessage(), 'property_id' => $property_id ?? null]
+    );
     send_error("Database error. Could not create booking.", [], 500);
 } catch (Exception $e) {
     error_log("General error during booking creation: " . $e->getMessage());
+    ActivityLogger::log(
+        $guest_id ?? null,
+        'booking_error',
+        "Error during booking creation",
+        'booking',
+        null,
+        ['error' => $e->getMessage(), 'property_id' => $property_id ?? null]
+    );
     send_error("An unexpected error occurred during booking creation.", [], 500);
 }

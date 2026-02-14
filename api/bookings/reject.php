@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
+require_once __DIR__ . '/../../utils/activity_logger.php'; // Activity logger
 
 // --- JWT Authentication ---
 $userData = JWTManager::authenticate();
@@ -43,11 +44,27 @@ try {
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$booking) {
+        ActivityLogger::log(
+            $user_id,
+            'booking_reject_failed',
+            "Failed to reject booking - Booking not found",
+            'booking',
+            $booking_id,
+            ['reason' => 'booking_not_found']
+        );
         send_error("Booking not found.", [], 404);
     }
 
     // --- Authorization Check ---
     if ((int)$booking['host_id'] !== (int)$user_id) {
+        ActivityLogger::log(
+            $user_id,
+            'booking_reject_unauthorized',
+            "Unauthorized booking rejection attempt",
+            'booking',
+            $booking_id,
+            ['actual_host_id' => $booking['host_id'], 'guest_id' => $booking['guest_id']]
+        );
         send_error("Forbidden. You are not the host of this booking.", [], 403);
     }
 
@@ -69,6 +86,20 @@ try {
     $stmt->bindParam(':rejection_reason', $sanitized_rejection_reason, PDO::PARAM_STR);
 
     if ($stmt->execute()) {
+        // Log successful rejection
+        ActivityLogger::logBooking(
+            $user_id,
+            'rejected',
+            $booking_id,
+            [
+                'guest_id' => $booking['guest_id'],
+                'property_name' => $booking['property_name'],
+                'check_in' => $booking['check_in'],
+                'check_out' => $booking['check_out'],
+                'rejection_reason' => $sanitized_rejection_reason
+            ]
+        );
+
         // --- Send Notifications ---
         $guest_id = (int)$booking['guest_id'];
         $property_name = $booking['property_name'];
@@ -90,13 +121,36 @@ try {
 
         send_success("Booking rejected successfully.", $updated_booking_data);
     } else {
+        ActivityLogger::log(
+            $user_id,
+            'booking_reject_failed',
+            "Failed to update booking status to rejected",
+            'booking',
+            $booking_id
+        );
         send_error("Failed to update booking status.", [], 500);
     }
 
 } catch (PDOException $e) {
     error_log("Database error rejecting booking " . $booking_id . ": " . $e->getMessage());
+    ActivityLogger::log(
+        $user_id ?? null,
+        'booking_reject_db_error',
+        "Database error during booking rejection",
+        'booking',
+        $booking_id ?? null,
+        ['error' => $e->getMessage()]
+    );
     send_error("Database error. Could not reject booking.", [], 500);
 } catch (Exception $e) {
     error_log("General error rejecting booking " . $booking_id . ": " . $e->getMessage());
+    ActivityLogger::log(
+        $user_id ?? null,
+        'booking_reject_error',
+        "Error during booking rejection",
+        'booking',
+        $booking_id ?? null,
+        ['error' => $e->getMessage()]
+    );
     send_error("An unexpected error occurred during booking rejection.", [], 500);
 }

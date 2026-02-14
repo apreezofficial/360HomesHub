@@ -45,8 +45,8 @@ $authProvider = $email ? 'email' : 'phone';
 
 try {
     $stmt = $pdo->prepare("
-        INSERT INTO users (email, phone, password_hash, first_name, last_name, role, auth_provider, is_verified, onboarding_step) 
-        VALUES (?, ?, ?, ?, ?, ?, ?, 1, 'completed')
+        INSERT INTO users (email, phone, password_hash, first_name, last_name, role, auth_provider, status, onboarding_step) 
+        VALUES (?, ?, ?, ?, ?, ?, ?, 'verified', 'completed')
     ");
     $stmt->execute([$email, $phone, $passwordHash, $firstName, $lastName, $role, $authProvider]);
     $userId = $pdo->lastInsertId();

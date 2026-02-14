@@ -58,7 +58,7 @@ try {
 
     // Fetch property details
     $stmt = $pdo->prepare("
-        SELECT p.*, u.first_name, u.last_name, u.avatar
+        SELECT p.*, u.first_name, u.last_name, u.avatar, u.status, u.role
         FROM properties p
         JOIN users u ON p.host_id = u.id
         WHERE p.id = ?
@@ -114,7 +114,9 @@ try {
             'id' => (int) $property['host_id'],
             'first_name' => $property['first_name'],
             'last_name' => $property['last_name'],
-            'avatar' => $property['avatar']
+            'avatar' => $property['avatar'],
+            'status' => $property['status'],
+            'role' => $property['role']
         ]
     ];
 

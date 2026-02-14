@@ -20,11 +20,11 @@ $pdo = Database::getInstance();
 $user = null;
 
 if (!empty($email)) {
-    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE email = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, status, message_disabled, booking_disabled, role, avatar FROM users WHERE email = ?");
     $stmt->execute([$email]);
     $user = $stmt->fetch();
 } elseif (!empty($phone)) {
-    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE phone = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, status, message_disabled, booking_disabled, role, avatar FROM users WHERE phone = ?");
     $stmt->execute([$phone]);
     $user = $stmt->fetch();
 }
@@ -45,11 +45,20 @@ $jwtData = [
     'email' => $user['email'],
     'phone' => $user['phone'],
     'onboarding_step' => $user['onboarding_step'],
-    'is_verified' => (bool)$user['is_verified'],
+    'status' => $user['status'],
+    'message_disabled' => (bool)$user['message_disabled'],
+    'booking_disabled' => (bool)$user['booking_disabled'],
     'role' => $user['role'],
     'avatar' => $user['avatar']
 ];
 $token = JWTManager::generateToken($jwtData);
 
-send_success('Login successful.', ['token' => $token, 'onboarding_step' => $user['onboarding_step'], 'is_verified' => (bool)$user['is_verified'], 'role' => $user['role']]);
+send_success('Login successful.', [
+    'token' => $token, 
+    'onboarding_step' => $user['onboarding_step'], 
+    'status' => $user['status'],
+    'message_disabled' => (bool)$user['message_disabled'],
+    'booking_disabled' => (bool)$user['booking_disabled'],
+    'role' => $user['role']
+]);
 

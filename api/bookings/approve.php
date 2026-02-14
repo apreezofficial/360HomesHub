@@ -6,6 +6,7 @@ require_once __DIR__ . '/../../utils/db.php'; // Database connection
 require_once __DIR__ . '/../../utils/response.php'; // JSON response handler
 require_once __DIR__ . '/../../utils/jwt.php'; // JWT authentication
 require_once __DIR__ . '/../../api/notifications/notify.php'; // Notification helper
+require_once __DIR__ . '/../../utils/activity_logger.php'; // Activity logger
 
 
 // --- JWT Authentication ---
@@ -40,12 +41,28 @@ try {
     $booking = $stmt->fetch(PDO::FETCH_ASSOC);
 
     if (!$booking) {
+        ActivityLogger::log(
+            $user_id,
+            'booking_approve_failed',
+            "Failed to approve booking - Booking not found",
+            'booking',
+            $booking_id,
+            ['reason' => 'booking_not_found']
+        );
         send_error("Booking not found.", [], 404);
     }
 
     // --- Authorization Check ---
     // Ensure the logged-in user is the host of this booking
     if ((int)$booking['host_id'] !== (int)$user_id) {
+        ActivityLogger::log(
+            $user_id,
+            'booking_approve_unauthorized',
+            "Unauthorized booking approval attempt",
+            'booking',
+            $booking_id,
+            ['actual_host_id' => $booking['host_id'], 'guest_id' => $booking['guest_id']]
+        );
         send_error("Forbidden. You are not the host of this booking.", [], 403);
     }
 
@@ -60,6 +77,19 @@ try {
     $stmt->bindParam(':booking_id', $booking_id, PDO::PARAM_INT);
 
     if ($stmt->execute()) {
+        // Log successful approval
+        ActivityLogger::logBooking(
+            $user_id,
+            'approved',
+            $booking_id,
+            [
+                'guest_id' => $booking['guest_id'],
+                'property_name' => $booking['property_name'],
+                'check_in' => $booking['check_in'],
+                'check_out' => $booking['check_out']
+            ]
+        );
+
         // --- Send Notifications ---
         $guest_id = (int)$booking['guest_id'];
         $property_name = $booking['property_name'];
@@ -86,13 +116,36 @@ try {
 
         send_success("Booking approved successfully.", $updated_booking_data);
     } else {
+        ActivityLogger::log(
+            $user_id,
+            'booking_approve_failed',
+            "Failed to update booking status to approved",
+            'booking',
+            $booking_id
+        );
         send_error("Failed to update booking status.", [], 500);
     }
 
 } catch (PDOException $e) {
     error_log("Database error approving booking {$booking_id}: " . $e->getMessage());
+    ActivityLogger::log(
+        $user_id ?? null,
+        'booking_approve_db_error',
+        "Database error during booking approval",
+        'booking',
+        $booking_id ?? null,
+        ['error' => $e->getMessage()]
+    );
     send_error("Database error. Could not approve booking.", [], 500);
 } catch (Exception $e) {
     error_log("General error approving booking {$booking_id}: " . $e->getMessage());
+    ActivityLogger::log(
+        $user_id ?? null,
+        'booking_approve_error',
+        "Error during booking approval",
+        'booking',
+        $booking_id ?? null,
+        ['error' => $e->getMessage()]
+    );
     send_error("An unexpected error occurred during booking approval.", [], 500);
 }

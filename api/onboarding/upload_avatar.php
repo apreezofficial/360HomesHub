@@ -22,9 +22,10 @@ if (!$userId) {
 $pdo = Database::getInstance();
 
 // Check user's current onboarding step
-$stmt = $pdo->prepare("SELECT onboarding_step FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT onboarding_step, email, phone, auth_provider, role, status, message_disabled, booking_disabled, first_name, last_name, bio, address, city, state, country FROM users WHERE id = ?");
 $stmt->execute([$userId]);
-$userOnboarding = $stmt->fetchColumn();
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$userOnboarding = $user['onboarding_step'];
 
 if ($userOnboarding !== 'avatar' && $userOnboarding !== 'role' && $userOnboarding !== 'kyc' && $userOnboarding !== 'completed') {
     send_error('Please complete previous onboarding steps. Current step: ' . $userOnboarding, ['onboarding_step' => $userOnboarding], 403);
@@ -43,9 +44,22 @@ try {
     $stmt->execute([$avatarPath, $userId]);
 
     // Generate new JWT token with updated onboarding step and avatar
-    $userData['avatar'] = $avatarPath;
-    $userData['onboarding_step'] = 'role';
-    $newToken = JWTManager::generateToken($userData);
+    // Generate new JWT token with updated onboarding step and avatar
+    $jwtData = [
+        'user_id' => $userId,
+        'email' => $user['email'],
+        'phone' => $user['phone'],
+        'auth_provider' => $user['auth_provider'],
+        'role' => $user['role'],
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
+        'onboarding_step' => 'role',
+        'avatar' => $avatarPath,
+        'first_name' => $user['first_name'],
+        'last_name' => $user['last_name']
+    ];
+    $newToken = JWTManager::generateToken($jwtData);
 
     send_success('Avatar uploaded successfully. Please select your role.', ['token' => $newToken, 'onboarding_step' => 'role', 'avatar_url' => $avatarPath]);
 

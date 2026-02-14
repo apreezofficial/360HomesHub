@@ -29,6 +29,19 @@ if (empty($password) || strlen($password) < 8) {
 
 $pdo = Database::getInstance();
 
+// Check user's current onboarding step
+$stmt = $pdo->prepare("SELECT onboarding_step, email, phone, auth_provider, role, status, message_disabled, booking_disabled, avatar, first_name, last_name FROM users WHERE id = ?");
+$stmt->execute([$userId]);
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$userOnboarding = $user['onboarding_step'];
+
+if ($userOnboarding !== 'password' && $userOnboarding !== 'otp') {
+    // If user is not in 'password' step, they might be resetting it or it's an error. 
+    // Assuming this endpoint is strictly for initial setup or reset.
+    // If strict onboarding:
+    // send_error('Invalid onboarding step.', [], 403);
+}
+
 try {
     // Hash the new password
     $passwordHash = password_hash($password, PASSWORD_DEFAULT);
@@ -37,9 +50,22 @@ try {
     $stmt = $pdo->prepare("UPDATE users SET password_hash = ?, onboarding_step = 'profile' WHERE id = ?");
     $stmt->execute([$passwordHash, $userId]);
 
-    // Generate new JWT token with updated onboarding step
-    $userData['onboarding_step'] = 'profile';
-    $newToken = JWTManager::generateToken($userData);
+    // Generate new JWT token with updated onboarding step and user info
+    $jwtData = [
+        'user_id' => $userId,
+        'email' => $user['email'],
+        'phone' => $user['phone'],
+        'auth_provider' => $user['auth_provider'],
+        'role' => $user['role'],
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
+        'onboarding_step' => 'profile',
+        'avatar' => $user['avatar'],
+        'first_name' => $user['first_name'],
+        'last_name' => $user['last_name']
+    ];
+    $newToken = JWTManager::generateToken($jwtData);
 
     send_success('Password set successfully. Please complete your profile.', ['token' => $newToken, 'onboarding_step' => 'profile']);
 

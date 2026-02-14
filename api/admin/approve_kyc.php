@@ -42,8 +42,8 @@ try {
     $stmt = $pdo->prepare("UPDATE kyc SET status = 'approved' WHERE id = ?");
     $stmt->execute([$kycId]);
 
-    // Update user's is_verified status
-    $stmt = $pdo->prepare("UPDATE users SET is_verified = 1 WHERE id = ?");
+    // Update user's status to verified
+    $stmt = $pdo->prepare("UPDATE users SET status = 'verified' WHERE id = ?");
     $stmt->execute([$userId]);
 
     $pdo->commit();

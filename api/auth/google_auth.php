@@ -44,13 +44,13 @@ try {
     $pdo->beginTransaction();
 
     // Check if user exists by google_id
-    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE google_id = ?");
+    $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, status, message_disabled, booking_disabled, role, avatar FROM users WHERE google_id = ?");
     $stmt->execute([$googleId]);
     $user = $stmt->fetch();
 
     if (!$user) {
         // Check if user exists by email (to link Google to existing email account if applicable)
-        $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE email = ?");
+        $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, status, message_disabled, booking_disabled, role, avatar FROM users WHERE email = ?");
         $stmt->execute([$email]);
         $user = $stmt->fetch();
 
@@ -59,7 +59,7 @@ try {
             $stmt = $pdo->prepare("UPDATE users SET google_id = ?, auth_provider = 'google' WHERE id = ?");
             $stmt->execute([$googleId, $user['id']]);
             // Re-fetch user to get updated info
-            $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, status, message_disabled, booking_disabled, role, avatar FROM users WHERE id = ?");
             $stmt->execute([$user['id']]);
             $user = $stmt->fetch();
         } else {
@@ -68,12 +68,14 @@ try {
             $temporaryPasswordHash = password_hash(bin2hex(random_bytes(16)), PASSWORD_DEFAULT); // Random 32-char hex string as temp password
             $onboardingStep = 'password'; // Prompt user to set a real password
 
+            $avatar = "https://avatar.idolo.dev/" . $email;
+
             $stmt = $pdo->prepare("INSERT INTO users (email, google_id, password_hash, first_name, last_name, avatar, auth_provider, onboarding_step) VALUES (?, ?, ?, ?, ?, ?, ?, ?)");
             $stmt->execute([$email, $googleId, $temporaryPasswordHash, $firstName, $lastName, $avatar, 'google', $onboardingStep]);
             $userId = $pdo->lastInsertId();
 
             // Fetch newly created user data to include in JWT
-            $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, is_verified, role, avatar FROM users WHERE id = ?");
+            $stmt = $pdo->prepare("SELECT id, email, phone, password_hash, auth_provider, onboarding_step, status, message_disabled, booking_disabled, role, avatar FROM users WHERE id = ?");
             $stmt->execute([$userId]);
             $user = $stmt->fetch();
         }
@@ -88,7 +90,9 @@ try {
         'email' => $user['email'],
         'phone' => $user['phone'],
         'onboarding_step' => $user['onboarding_step'],
-        'is_verified' => (bool)$user['is_verified'],
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
         'role' => $user['role'],
         'avatar' => $user['avatar']
     ];
@@ -97,7 +101,9 @@ try {
     send_success('Google authentication successful.', [
         'token' => $token,
         'onboarding_step' => $user['onboarding_step'],
-        'is_verified' => (bool)$user['is_verified'],
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
         'role' => $user['role']
     ]);
 

@@ -144,7 +144,23 @@
         "Extra": ""
     },
     {
-        "Field": "is_verified",
+        "Field": "status",
+        "Type": "enum('verified','pending','suspended','no_kyc')",
+        "Null": "YES",
+        "Key": "",
+        "Default": "no_kyc",
+        "Extra": ""
+    },
+    {
+        "Field": "message_disabled",
+        "Type": "tinyint(1)",
+        "Null": "YES",
+        "Key": "",
+        "Default": "0",
+        "Extra": ""
+    },
+    {
+        "Field": "booking_disabled",
         "Type": "tinyint(1)",
         "Null": "YES",
         "Key": "",

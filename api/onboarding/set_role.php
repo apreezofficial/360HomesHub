@@ -21,9 +21,10 @@ if (!$userId) {
 $pdo = Database::getInstance();
 
 // Check user's current onboarding step
-$stmt = $pdo->prepare("SELECT onboarding_step FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT onboarding_step, email, phone, auth_provider, status, message_disabled, booking_disabled, first_name, last_name, bio, address, city, state, country, avatar FROM users WHERE id = ?");
 $stmt->execute([$userId]);
-$userOnboarding = $stmt->fetchColumn();
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$userOnboarding = $user['onboarding_step'];
 
 if ($userOnboarding !== 'role' && $userOnboarding !== 'kyc' && $userOnboarding !== 'completed') {
     send_error('Please complete previous onboarding steps. Current step: ' . $userOnboarding, ['onboarding_step' => $userOnboarding], 403);
@@ -43,9 +44,21 @@ try {
     $stmt->execute([$role, $userId]);
 
     // Generate new JWT token with updated onboarding step and role
-    $userData['role'] = $role;
-    $userData['onboarding_step'] = 'kyc';
-    $newToken = JWTManager::generateToken($userData);
+    $jwtData = [
+        'user_id' => $userId,
+        'email' => $user['email'],
+        'phone' => $user['phone'],
+        'auth_provider' => $user['auth_provider'],
+        'role' => $role,
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
+        'onboarding_step' => 'kyc',
+        'first_name' => $user['first_name'],
+        'last_name' => $user['last_name'],
+        'avatar' => $user['avatar']
+    ];
+    $newToken = JWTManager::generateToken($jwtData);
 
     send_success('Role selected successfully. Please proceed to KYC verification.', ['token' => $newToken, 'onboarding_step' => 'kyc', 'role' => $role]);
 

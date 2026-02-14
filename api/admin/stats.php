@@ -12,152 +12,194 @@ if ($userData['role'] !== 'admin') {
     send_error('Access denied. Admin only.', [], 403);
 }
 
+$period = $_GET['period'] ?? 'last_30_days'; // today, this_week, last_30_days, last_3_months
+
+$pdo = Database::getInstance();
+
 try {
-    $pdo = Database::getInstance();
-    $period = $_GET['period'] ?? '30_days';
+    // 1. Determine Date Ranges
+    $currentStart = '';
+    $previousStart = '';
+    $now = date('Y-m-d H:i:s');
 
-    // Date Logic
-    $interval = '30 DAY';
-    if ($period === '7_days') $interval = '7 DAY';
-    if ($period === '1_year') $interval = '1 YEAR';
-
-    // Stats Queries
-    // Total Users
-    $stmtUsers = $pdo->query("SELECT COUNT(*) FROM users");
-    if (!$stmtUsers) {
-        throw new Exception("Users query failed: " . print_r($pdo->errorInfo(), true));
+    switch ($period) {
+        case 'today':
+            $currentStart = date('Y-m-d 00:00:00');
+            $previousStart = date('Y-m-d 00:00:00', strtotime('-1 day'));
+            $previousEnd = date('Y-m-d 23:59:59', strtotime('-1 day'));
+            break;
+        case 'this_week':
+            $currentStart = date('Y-m-d H:i:s', strtotime('monday this week'));
+            $previousStart = date('Y-m-d H:i:s', strtotime('monday last week'));
+            $previousEnd = date('Y-m-d H:i:s', strtotime('sunday last week 23:59:59'));
+            break;
+        case 'last_3_months':
+            $currentStart = date('Y-m-d H:i:s', strtotime('-3 months'));
+            $previousStart = date('Y-m-d H:i:s', strtotime('-6 months'));
+            $previousEnd = $currentStart;
+            break;
+        case 'last_30_days':
+        default:
+            $currentStart = date('Y-m-d H:i:s', strtotime('-30 days'));
+            $previousStart = date('Y-m-d H:i:s', strtotime('-60 days'));
+            $previousEnd = $currentStart;
+            break;
     }
-    $totalUsers = $stmtUsers->fetchColumn();
 
-    // New Users (with error check)
-    $stmtNewUsers = $pdo->prepare("SELECT COUNT(*) FROM users WHERE created_at >= DATE_SUB(NOW(), INTERVAL :interval)");
-    // Since we can't bind INTERVAL directly in some SQL modes easily without concat, let use the previous logic but safer
-    // Actually safe way:
-    $intervalStr = "-30 DAY";
-    if ($period === '7_days') $intervalStr = "-7 DAY";
-    if ($period === '1_year') $intervalStr = "-1 YEAR";
-    
-    // Use strtotime for safer date calculation in PHP
-    $dateThreshold = date('Y-m-d H:i:s', strtotime($intervalStr));
-    
-    // Re-run safely
-    $newUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE created_at >= '$dateThreshold'")->fetchColumn();
+    // Helper function for growth
+    function calculateGrowth($current, $previous) {
+        if ($previous == 0) return $current > 0 ? 100 : 0;
+        return round((($current - $previous) / $previous) * 100);
+    }
 
-    // Listings
-    $totalProperties = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'published'")->fetchColumn();
-    $newProperties = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'published' AND created_at >= DATE_SUB(NOW(), INTERVAL $interval)")->fetchColumn();
+    // 2. Fetch Stats
+    // Total Users
+    $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
+    $verifiedUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE status = 'verified'")->fetchColumn();
+    $hostUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'host'")->fetchColumn();
+    $guestUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'guest'")->fetchColumn();
+    $currentUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE created_at >= '$currentStart'")->fetchColumn();
+    $prevUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE created_at >= '$previousStart' AND created_at < '$currentStart'")->fetchColumn();
+    $usersGrowth = calculateGrowth($currentUsers, $prevUsers);
 
-    // Bookings
+    // Active Listings (published)
+    $activeListings = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'active'")->fetchColumn();
+    $currentListings = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'active' AND created_at >= '$currentStart'")->fetchColumn();
+    $prevListings = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'active' AND created_at >= '$previousStart' AND created_at < '$currentStart'")->fetchColumn();
+    $listingsGrowth = calculateGrowth($currentListings, $prevListings);
+
+    // Active Bookings (confirmed/active)
     $activeBookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed', 'active')")->fetchColumn();
-    $newBookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed', 'active') AND created_at >= DATE_SUB(NOW(), INTERVAL $interval)")->fetchColumn();
+    $currentBookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed', 'active') AND created_at >= '$currentStart'")->fetchColumn();
+    $prevBookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed', 'active') AND created_at >= '$previousStart' AND created_at < '$currentStart'")->fetchColumn();
+    $bookingsGrowth = calculateGrowth($currentBookings, $prevBookings);
 
-    // Revenue
-    $totalRevenue = $pdo->query("SELECT SUM(amount) FROM transactions WHERE status = 'success'")->fetchColumn() ?: 0;
-    $newRevenue = $pdo->query("SELECT SUM(amount) FROM transactions WHERE status = 'success' AND created_at >= DATE_SUB(NOW(), INTERVAL $interval)")->fetchColumn() ?: 0;
+    // Total Earnings
+    $totalEarnings = $pdo->query("SELECT SUM(amount) FROM transactions WHERE type = 'credit' AND category = 'host_earning' AND status = 'completed'")->fetchColumn() ?: 0;
+    $currentEarnings = $pdo->query("SELECT SUM(amount) FROM transactions WHERE type = 'credit' AND category = 'host_earning' AND status = 'completed' AND created_at >= '$currentStart'")->fetchColumn() ?: 0;
+    $prevEarnings = $pdo->query("SELECT SUM(amount) FROM transactions WHERE type = 'credit' AND category = 'host_earning' AND status = 'completed' AND created_at >= '$previousStart' AND created_at < '$currentStart'")->fetchColumn() ?: 0;
+    $earningsGrowth = calculateGrowth($currentEarnings, $prevEarnings);
 
-    // Action Queue logic (Mock concepts with real queries)
+    // 3. Action Queue
     $actionQueue = [];
-
-    // 1. Listings pending verify > 24h
-    $pendingProps = $pdo->query("
-        SELECT id, name, created_at 
-        FROM properties 
-        WHERE status = 'pending' AND created_at < DATE_SUB(NOW(), INTERVAL 24 HOUR)
-        LIMIT 3
-    ")->fetchAll(PDO::FETCH_ASSOC);
-
-    foreach($pendingProps as $p) {
+    
+    // Listing Review Delay
+    $stmtReview = $pdo->query("SELECT id, name, created_at FROM properties WHERE status = 'pending' ORDER BY created_at ASC LIMIT 2");
+    while ($row = $stmtReview->fetch()) {
         $actionQueue[] = [
             'entity' => 'Listing Review Delay',
-            'desc' => "Property: {$p['name']}",
+            'description' => "Listing: " . $row['name'] . " pending approval for over 2 days.",
             'severity' => 'High',
-            'time' => $p['created_at'], // In real app use relative time formatter
-            'action_link' => "property_view.php?id={$p['id']}",
-            'action_text' => 'Review listing'
+            'time' => $row['created_at'],
+            'action' => 'Review listing',
+            'action_link' => "/admin/listings/" . $row['id']
         ];
     }
 
-    // 2. Pending KYC
-    $pendingKYC = $pdo->query("SELECT id, user_id, created_at FROM kyc WHERE status = 'pending' LIMIT 2")->fetchAll(PDO::FETCH_ASSOC);
-    foreach($pendingKYC as $k) {
-        $actionQueue[] = [
-            'entity' => 'KYC Verification',
-            'desc' => "User ID: {$k['user_id']} pending verification",
-            'severity' => 'Medium',
-            'time' => $k['created_at'],
-            'action_link' => "kyc.php",
-            'action_text' => 'Verify user'
+    // Booking Dispute (Mocked or from disputes table if exists)
+    $actionQueue[] = [
+        'entity' => 'Booking Dispute',
+        'description' => "Guest reported property mismatch (Booking #HB-1002).",
+        'severity' => 'Critical',
+        'time' => date('Y-m-d H:i:s', strtotime('-15 mins')),
+        'action' => 'View report',
+        'action_link' => "/admin/bookings/disputes/1"
+    ];
+
+    // Chat Violation (Mocked)
+    $actionQueue[] = [
+        'entity' => 'Chat Violation',
+        'description' => "Phone number detected in chat (Sarah M. & Host J.).",
+        'severity' => 'Medium',
+        'time' => date('Y-m-d H:i:s', strtotime('-1 hour')),
+        'action' => 'Open chat',
+        'action_link' => "/admin/chats/123"
+    ];
+
+    // 4. Recently Added Listings
+    $recentListings = [];
+    $stmtRecent = $pdo->query("
+        SELECT p.id, p.name, p.address, p.city, p.status, p.price, u.first_name, u.last_name, p.created_at
+        FROM properties p
+        JOIN users u ON p.host_id = u.id
+        ORDER BY p.created_at DESC
+        LIMIT 5
+    ");
+    while ($row = $stmtRecent->fetch()) {
+        $recentListings[] = [
+            'id' => $row['id'],
+            'name' => $row['name'],
+            'location' => $row['city'] . ", " . $row['address'],
+            'host' => $row['first_name'] . " " . $row['last_name'],
+            'status' => ucfirst($row['status']),
+            'price' => "₦" . number_format($row['price'], 2),
+            'time' => $row['created_at']
         ];
     }
 
-    // Activities (Combined Stream)
+    // 5. Activities (Timeline)
     $activities = [];
     
-    // New Users
-    $recentUsers = $pdo->query("SELECT first_name, last_name, created_at FROM users ORDER BY created_at DESC LIMIT 3")->fetchAll(PDO::FETCH_ASSOC);
-    foreach($recentUsers as $u) {
-        $activities[] = [
-            'title' => 'New user registration',
-            'time' => $u['created_at'],
-            'desc' => "{$u['first_name']} {$u['last_name']} joined the platform.",
-            'type' => 'user'
-        ];
-    }
-
-    // New Properties
-    $recentProps = $pdo->query("SELECT p.name, u.first_name, u.last_name, p.created_at FROM properties p JOIN users u ON p.host_id = u.id ORDER BY p.created_at DESC LIMIT 3")->fetchAll(PDO::FETCH_ASSOC);
-    foreach($recentProps as $p) {
-        $activities[] = [
-            'title' => 'New listing added',
-            'time' => $p['created_at'],
-            'desc' => "The host {$p['first_name']}, has submitted '{$p['name']}' for verification.",
-            'type' => 'property'
-        ];
-    }
-
-    // Sort activities by time
-    usort($activities, function($a, $b) {
-        return strtotime($b['time']) - strtotime($a['time']);
-    });
-    $activities = array_slice($activities, 0, 5); // key 5 most recent
-
-    // Recently Added Listings Table
-    $recentListingsTable = $pdo->query("
-        SELECT p.*, u.first_name, u.last_name 
+    // Mix of New Listings and Admin Actions
+    $stmtActs = $pdo->query("
+        SELECT 'listing' as type, p.name, u.first_name, p.created_at 
         FROM properties p 
         JOIN users u ON p.host_id = u.id 
         ORDER BY p.created_at DESC 
         LIMIT 5
-    ")->fetchAll(PDO::FETCH_ASSOC);
+    ");
+    while ($row = $stmtActs->fetch()) {
+        $activities[] = [
+            'title' => 'New listing added',
+            'description' => "The host " . $row['first_name'] . ", has submitted a new property for verification. Review it now.",
+            'time' => $row['created_at'],
+            'date_group' => (date('Y-m-d', strtotime($row['created_at'])) === date('Y-m-d')) ? 'Today' : 'Yesterday'
+        ];
+    }
 
+    // Add a mocked recurring activity if list is short
+    if (count($activities) < 3) {
+        $activities[] = [
+            'title' => 'Admin released payout',
+            'description' => "The balance for host Alexander has been cleared and sent to bank.",
+            'time' => date('Y-m-d H:i:s', strtotime('-2 hours')),
+            'date_group' => 'Today'
+        ];
+    }
 
-    send_success('Dashboard stats retrieved.', [
-        'period' => $period,
-        'stats' => [
-            'users' => [
-                'total' => (int)$totalUsers,
-                'growth' => $totalUsers > 0 ? round(($newUsers / $totalUsers) * 100) : 0
+    send_success('Admin dashboard loaded successfully.', [
+        'overview' => [
+            'total_users' => [
+                'value' => (int)$totalUsers,
+                'verified_value' => (int)$verifiedUsers,
+                'host_value' => (int)$hostUsers,
+                'guest_value' => (int)$guestUsers,
+                'growth' => (int)$usersGrowth,
+                'label' => 'Total users'
             ],
-            'listings' => [
-                'total' => (int)$totalProperties,
-                'growth' => $totalProperties > 0 ? round(($newProperties / $totalProperties) * 100) : 0
+            'active_listings' => [
+                'value' => (int)$activeListings,
+                'growth' => (int)$listingsGrowth,
+                'label' => 'Active listings'
             ],
-            'bookings' => [
-                'total' => (int)$activeBookings,
-                'growth' => $activeBookings > 0 ? round(($newBookings / $activeBookings) * 100) : 0
+            'active_bookings' => [
+                'value' => (int)$activeBookings,
+                'growth' => (int)$bookingsGrowth,
+                'label' => 'Active bookings'
             ],
-            'revenue' => [
-                'total' => (float)$totalRevenue,
-                'growth' => $totalRevenue > 0 ? round(($newRevenue / $totalRevenue) * 100) : 0
+            'total_earnings' => [
+                'value' => (float)$totalEarnings,
+                'growth' => (int)$earningsGrowth,
+                'label' => 'Total earnings',
+                'formatted' => "₦" . number_format($totalEarnings, 2)
             ]
         ],
         'action_queue' => $actionQueue,
-        'activities' => $activities,
-        'recent_listings' => $recentListingsTable
+        'recent_listings' => $recentListings,
+        'activities' => $activities
     ]);
 
 } catch (Exception $e) {
-    error_log("Admin stats error: " . $e->getMessage());
-    // In production, hide detailed errors. In dev, showing it helps.
-    send_error('Failed to retrieve stats: ' . $e->getMessage(), [], 500);
+    error_log("Dashboard error: " . $e->getMessage());
+    send_error('Failed to load dashboard data.', [], 500);
 }

@@ -13,14 +13,8 @@ if ($_SERVER['REQUEST_METHOD'] !== 'POST') {
 $input = json_decode(file_get_contents('php://input'), true);
 
 $email = filter_var($input['email'] ?? '', FILTER_VALIDATE_EMAIL);
-$password = $input['password'] ?? '';
-
-if (!$email || empty($password)) {
-    send_error('Email and password are required.', [], 400);
-}
-
-if (strlen($password) < 8) {
-    send_error('Password must be at least 8 characters long.', [], 400);
+if (!$email) {
+    send_error('Email is required.', [], 400);
 }
 
 $pdo = Database::getInstance();
@@ -32,13 +26,17 @@ if ($stmt->fetch()) {
     send_error('Email already registered.', [], 409);
 }
 
-$passwordHash = password_hash($password, PASSWORD_DEFAULT);
+// Generate a temporary random password hash (user sets actual password after OTP)
+$tempPassword = bin2hex(random_bytes(16));
+$passwordHash = password_hash($tempPassword, PASSWORD_DEFAULT);
 
 try {
     $pdo->beginTransaction();
 
-    $stmt = $pdo->prepare("INSERT INTO users (email, password_hash, auth_provider, onboarding_step) VALUES (?, ?, ?, ?)");
-    $stmt->execute([$email, $passwordHash, 'email', 'otp']);
+    $avatar = "https://avatar.idolo.dev/" . $email;
+
+    $stmt = $pdo->prepare("INSERT INTO users (email, password_hash, avatar, auth_provider, onboarding_step) VALUES (?, ?, ?, ?, ?)");
+    $stmt->execute([$email, $passwordHash, $avatar, 'email', 'otp']);
     $userId = $pdo->lastInsertId();
 
     $otpManager = new OtpManager();

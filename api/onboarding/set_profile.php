@@ -21,9 +21,10 @@ if (!$userId) {
 $pdo = Database::getInstance();
 
 // Check user's current onboarding step
-$stmt = $pdo->prepare("SELECT onboarding_step FROM users WHERE id = ?");
+$stmt = $pdo->prepare("SELECT onboarding_step, email, phone, auth_provider, role, status, message_disabled, booking_disabled, avatar, address, city, state, country FROM users WHERE id = ?");
 $stmt->execute([$userId]);
-$userOnboarding = $stmt->fetchColumn();
+$user = $stmt->fetch(PDO::FETCH_ASSOC);
+$userOnboarding = $user['onboarding_step'];
 
 if ($userOnboarding !== 'profile' && $userOnboarding !== 'location' && $userOnboarding !== 'avatar' && $userOnboarding !== 'role' && $userOnboarding !== 'kyc' && $userOnboarding !== 'completed') {
     send_error('Please complete previous onboarding steps. Current step: ' . $userOnboarding, ['onboarding_step' => $userOnboarding], 403);
@@ -45,11 +46,23 @@ try {
     $stmt->execute([$firstName, $lastName, $bio, $userId]);
 
     // Generate new JWT token with updated onboarding step
-    $userData['first_name'] = $firstName;
-    $userData['last_name'] = $lastName;
-    $userData['bio'] = $bio;
-    $userData['onboarding_step'] = 'location';
-    $newToken = JWTManager::generateToken($userData);
+    // Generate new JWT token with updated onboarding step and profile info
+    $jwtData = [
+        'user_id' => $userId,
+        'email' => $user['email'],
+        'phone' => $user['phone'],
+        'auth_provider' => $user['auth_provider'],
+        'role' => $user['role'],
+        'status' => $user['status'],
+        'message_disabled' => (bool)$user['message_disabled'],
+        'booking_disabled' => (bool)$user['booking_disabled'],
+        'onboarding_step' => 'location',
+        'avatar' => $user['avatar'],
+        'first_name' => $firstName,
+        'last_name' => $lastName,
+        'bio' => $bio
+    ];
+    $newToken = JWTManager::generateToken($jwtData);
 
     send_success('Profile updated successfully. Please set your location.', ['token' => $newToken, 'onboarding_step' => 'location']);
 
