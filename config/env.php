@@ -32,7 +32,7 @@ $base_url = $protocol . "://" . $host;
 
 // If on localhost, include the project subdirectory if applicable
 if ($host === 'localhost' || $host === '127.0.0.1') {
-    $base_url .= '/360HomesHub';
+    $base_url .= '/36HomesHub';
 }
 define('BASE_URL', $base_url);
 define('APP_URL', $base_url); // Alias for consistency

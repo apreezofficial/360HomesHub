@@ -63,7 +63,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
 
                 <div class="text-center mb-8">
                     <h1 class="text-2xl font-bold text-gray-900 mb-2 font-outfit">Admin portal</h1>
-                    <p class="text-gray-500 text-[13px] font-playfair italic">Please enter your credentials to access 36homes dashboard</p>
+                    <p class="text-gray-500 text-[13px] font-playfair italic">Please enter your credentials to access 36homeshub dashboard</p>
                 </div>
 
                 <form id="login-form" class="space-y-5">
@@ -109,7 +109,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
                     <h1 class="text-2xl font-bold text-gray-900 mb-2 font-outfit">Verify your identity</h1>
                     <p class="text-gray-500 text-[13px] font-playfair italic px-4">
                         Please enter the 6 digit code sent to <br>
-                        <span id="otp-email-display" class="text-primary font-bold not-italic font-outfit">admin@36homes.com</span>
+                        <span id="otp-email-display" class="text-primary font-bold not-italic font-outfit">admin@36homeshub.com</span>
                     </p>
                 </div>
 
@@ -138,7 +138,7 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
 
         <div class="mt-8 text-center px-4">
             <p class="text-[11px] text-gray-400 font-playfair italic leading-relaxed">
-                Secure environment manage by 36homes IT. Authorized<br>access only.
+                Secure environment managed by 36HomesHub IT. Authorized<br>access only.
             </p>
         </div>
     </div>

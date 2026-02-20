@@ -22,7 +22,7 @@ if (!isset($_SESSION['jwt_token'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Management | 360HomesHub Admin</title>
+    <title>User Management | 36HomesHub Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -67,41 +67,42 @@ if (!isset($_SESSION['jwt_token'])) {
 <div class="flex min-h-screen">
     <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
 
-    <main class="flex-1 ml-[260px] min-h-screen p-8">
+    <main class="flex-1 lg:ml-[280px] min-h-screen pt-24 lg:pt-8 px-4 sm:px-8 pb-12 transition-all">
 
-        <!-- Top Nav -->
-        <div class="flex justify-between items-center mb-10">
-            <div class="text-[14px] text-gray-400">
+        <!-- Top Nav - Responsive -->
+        <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
+            <div class="hidden lg:block text-[14px] text-gray-400">
                 Administration / <span class="text-gray-900 font-medium">User Directory</span>
             </div>
-            <div class="flex-1 max-w-[500px] mx-8">
-                <div class="relative">
-                    <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+            <div class="w-full md:flex-1 md:max-w-[500px]">
+                <div class="relative group">
+                    <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors"></i>
                     <input type="text" id="user-search" placeholder="Search by name, ID or email..."
                            class="w-full bg-white border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/10 shadow-sm transition-all">
-                    <kbd class="absolute right-4 top-1/2 -translate-y-1/2 bg-gray-100 text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded">⌘K</kbd>
+                    <kbd class="hidden sm:block absolute right-4 top-1/2 -translate-y-1/2 bg-gray-100 text-gray-400 text-[10px] font-bold px-2 py-0.5 rounded">⌘K</kbd>
                 </div>
             </div>
-            <div class="flex items-center gap-3">
-                <div class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center cursor-pointer shadow-sm relative">
+            <div class="flex items-center justify-between md:justify-end w-full md:w-auto gap-3">
+                <div class="lg:hidden text-[14px] text-gray-400 font-medium">Directory</div>
+                <div class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center cursor-pointer shadow-sm relative hover:bg-gray-50 transition-all">
                     <i class="bi bi-bell text-[18px] text-gray-400"></i>
                     <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
                 </div>
             </div>
         </div>
 
-        <!-- Page Header -->
-        <div class="flex justify-between items-end mb-8">
+        <!-- Page Header - Responsive -->
+        <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-8">
             <div>
-                <h1 class="text-[30px] font-bold text-gray-900 mb-1">User Directory</h1>
-                <p class="text-gray-400 text-[14px]">Manage all platform users, their roles, activity and verification status.</p>
+                <h1 class="text-[26px] sm:text-[30px] font-bold text-[#001D3D] mb-1">User Directory</h1>
+                <p class="text-gray-400 text-[13px] sm:text-[14px]">Manage all platform users, their roles, activity and verification status.</p>
             </div>
-            <div class="flex gap-3">
-                <button onclick="exportCSV()" class="bg-white border border-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 shadow-sm hover:bg-gray-50 transition-all">
-                    <i class="bi bi-download"></i> Export CSV
+            <div class="flex gap-2 w-full sm:w-auto">
+                <button onclick="exportCSV()" class="flex-1 sm:flex-none justify-center bg-white border border-gray-100 text-gray-700 px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 shadow-sm hover:bg-gray-50 transition-all">
+                    <i class="bi bi-download"></i> <span class="hidden md:inline">Export CSV</span><span class="md:hidden">Export</span>
                 </button>
-                <a href="add_user.php" class="bg-[#005a92] text-white px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
-                    <i class="bi bi-person-plus-fill"></i> Add User
+                <a href="add_user.php" class="flex-1 sm:flex-none justify-center bg-[#005a92] text-white px-5 py-2.5 rounded-xl font-bold text-[13px] flex items-center gap-2 shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all">
+                    <i class="bi bi-person-plus-fill"></i> <span class="hidden md:inline">Add User</span><span class="md:hidden">Add</span>
                 </a>
             </div>
         </div>
@@ -118,20 +119,20 @@ if (!isset($_SESSION['jwt_token'])) {
             <?php endfor; ?>
         </div>
 
-        <!-- Filters & Controls -->
+        <!-- Filters & Controls - Responsive -->
         <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden mb-0">
-            <div class="flex items-center justify-between p-5 border-b border-gray-50">
-                <!-- Role Tabs -->
-                <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-xl">
-                    <button class="filter-tab px-4 py-2 rounded-lg text-[13px] font-bold bg-white shadow-sm text-gray-900 transition-all" data-filter="all">All</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all" data-filter="host">Hosts</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all" data-filter="guest">Guests</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all" data-filter="verified">Verified</button>
-                    <button class="filter-tab px-4 py-2 rounded-lg text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all" data-filter="suspended">Suspended</button>
+            <div class="flex flex-col lg:flex-row items-center justify-between p-4 sm:p-5 border-b border-gray-50 gap-6">
+                <!-- Role Tabs - Scrollable -->
+                <div class="flex items-center gap-1 bg-gray-100 p-1 rounded-xl w-full lg:w-auto overflow-x-auto no-scrollbar">
+                    <button class="filter-tab px-4 py-2 rounded-lg text-[12px] sm:text-[13px] font-bold bg-white shadow-sm text-gray-900 transition-all whitespace-nowrap" data-filter="all">All</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-[12px] sm:text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all whitespace-nowrap" data-filter="host">Hosts</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-[12px] sm:text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all whitespace-nowrap" data-filter="guest">Guests</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-[12px] sm:text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all whitespace-nowrap" data-filter="verified">Verified</button>
+                    <button class="filter-tab px-4 py-2 rounded-lg text-[12px] sm:text-[13px] font-bold text-gray-400 hover:text-gray-600 transition-all whitespace-nowrap" data-filter="suspended">Suspended</button>
                 </div>
 
-                <!-- Sort + Per page -->
-                <div class="flex items-center gap-4">
+                <!-- Sort + Per page - Responsive -->
+                <div class="flex flex-wrap items-center justify-between lg:justify-end gap-4 w-full lg:w-auto">
                     <div class="flex items-center gap-2">
                         <span class="text-[13px] text-gray-400">Sort:</span>
                         <select id="user-sort" class="bg-transparent border-none text-[13px] font-bold text-gray-900 focus:ring-0 cursor-pointer">
@@ -141,8 +142,8 @@ if (!isset($_SESSION['jwt_token'])) {
                             <option value="activity">Most Active</option>
                         </select>
                     </div>
-                    <div class="h-4 w-px bg-gray-200"></div>
-                    <div id="pagination-info" class="text-[13px] text-gray-400 font-medium"></div>
+                    <div class="hidden sm:block h-4 w-px bg-gray-200"></div>
+                    <div id="pagination-info" class="text-[12px] sm:text-[13px] text-gray-400 font-medium"></div>
                 </div>
             </div>
 

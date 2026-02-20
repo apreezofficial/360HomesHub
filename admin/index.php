@@ -140,7 +140,7 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>36Homes Dashboard | Admin</title>
+    <title>36HomesHub Dashboard | Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -168,32 +168,33 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
 <body class="bg-[#F9FAFB] min-h-screen font-outfit">
     <div class="flex min-h-screen">
         <!-- Sidebar -->
-        <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
+        <aside class="w-[280px] fixed h-full bg-white z-50 transition-transform lg:translate-x-0 -translate-x-full border-r border-gray-100"></aside>
 
         <!-- Main Content -->
-        <main class="flex-1 ml-[260px] min-h-screen p-8">
-            <!-- Top Nav -->
-            <div class="flex justify-between items-center mb-10">
-                <div class="text-[14px] text-gray-400">
+        <main class="flex-1 lg:ml-[280px] min-h-screen pt-24 lg:pt-8 px-4 sm:px-8 pb-12 transition-all">
+            <!-- Top Nav - Responsive -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
+                <div class="hidden lg:block text-[14px] text-gray-400">
                     Dashboard overview
                 </div>
-                <div class="flex-1 max-w-[500px] mx-8">
-                    <div class="relative">
-                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="w-full md:flex-1 md:max-w-[500px]">
+                    <div class="relative group">
+                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors"></i>
                         <input type="text" placeholder="Search for users, listings or bookings..." 
                                class="w-full bg-white border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/5 shadow-sm transition-all">
                     </div>
                 </div>
-                <div class="w-10"></div>
+                <div class="lg:hidden text-[14px] text-gray-400 font-medium self-start md:self-center">Dashboard</div>
             </div>
 
-            <div class="flex justify-between items-end mb-8">
+            <!-- Header - Responsive -->
+            <div class="flex flex-col sm:flex-row justify-between items-start sm:items-end gap-6 mb-8">
                 <div>
-                    <h1 class="text-[32px] font-bold text-gray-900 mb-2">Welcome back, Admin</h1>
-                    <p class="text-gray-400 text-[15px]">Here's what's happening with your platform today.</p>
+                    <h1 class="text-[28px] sm:text-[32px] font-bold text-[#001D3D] mb-2 font-outfit">Welcome back, Admin</h1>
+                    <p class="text-gray-400 text-[14px] sm:text-[15px]">Here's what's happening with your platform today.</p>
                 </div>
-                <form method="GET" class="relative">
-                    <select name="period" onchange="this.form.submit()" class="appearance-none bg-white border border-gray-100 px-6 py-3 rounded-xl text-[14px] font-bold text-gray-700 focus:outline-none pr-12 cursor-pointer shadow-sm">
+                <form method="GET" class="relative w-full sm:w-auto">
+                    <select name="period" onchange="this.form.submit()" class="w-full appearance-none bg-white border border-gray-100 px-6 py-3 rounded-xl text-[14px] font-bold text-gray-700 focus:outline-none pr-12 cursor-pointer shadow-sm">
                         <option value="30_days" <?= $period === '30_days' ? 'selected' : '' ?>>Last 30 days</option>
                         <option value="7_days" <?= $period === '7_days' ? 'selected' : '' ?>>Last 7 days</option>
                         <option value="1_year" <?= $period === '1_year' ? 'selected' : '' ?>>Last year</option>
@@ -202,8 +203,8 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
                 </form>
             </div>
 
-            <!-- Stats Grid -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
+            <!-- Stats Grid - Fully Responsive -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 sm:gap-6 mb-10">
                 <?= dashboardStatCard('Total users', number_format($totalUsers), $userGrowth, 'bi-people', 'this month') ?>
                 <?= dashboardStatCard('Active Hosts', number_format($totalHosts), $hostGrowth, 'bi-person-badge', 'growth') ?>
                 <?= dashboardStatCard('Total Guests', number_format($totalGuests), $guestGrowth, 'bi-person-check', 'bookings') ?>
@@ -211,8 +212,8 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
             </div>
 
             <div class="grid grid-cols-12 gap-8">
-                <!-- Action Queue -->
-                <div class="col-span-12 lg:col-span-8 space-y-8">
+                <!-- Action Queue - Responsive Grid -->
+                <div class="col-span-12 xl:col-span-8 space-y-8">
                     <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
                         <div class="p-8 border-b border-gray-50 flex justify-between items-center">
                             <h2 class="text-[18px] font-bold text-gray-900">Action queue</h2>

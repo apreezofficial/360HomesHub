@@ -23,7 +23,7 @@ if (!isset($_SESSION['jwt_token'])) {
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>User Profile | 360HomesHub Admin</title>
+    <title>User Profile | 36HomesHub Admin</title>
     <script src="https://cdn.tailwindcss.com"></script>
     <link href="https://fonts.googleapis.com/css2?family=Outfit:wght@300;400;500;600;700;800&display=swap" rel="stylesheet">
     <link rel="stylesheet" href="https://cdn.jsdelivr.net/npm/bootstrap-icons@1.11.1/font/bootstrap-icons.css">
@@ -53,9 +53,9 @@ if (!isset($_SESSION['jwt_token'])) {
 <?php endif; ?>
 
 <div class="flex min-h-screen">
-    <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
+    <aside class="w-[280px] fixed h-full bg-white z-50 transition-transform lg:translate-x-0 -translate-x-full border-r border-gray-100"></aside>
 
-    <main class="flex-1 ml-[260px] min-h-screen p-8" id="main-content">
+    <main class="flex-1 lg:ml-[280px] min-h-screen pt-24 lg:pt-8 px-4 sm:px-8 pb-12 transition-all" id="main-content">
 
         <!-- Breadcrumb -->
         <div class="text-[14px] text-gray-400 mb-8 flex items-center gap-2">
@@ -75,7 +75,7 @@ if (!isset($_SESSION['jwt_token'])) {
                     <div class="h-4 w-64 bg-gray-100 animate-pulse rounded-lg"></div>
                 </div>
             </div>
-            <div class="grid grid-cols-3 gap-6 mb-8">
+            <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 gap-6 mb-8">
                 <?php for($i=0;$i<3;$i++): ?>
                 <div class="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm h-36 animate-pulse"></div>
                 <?php endfor; ?>
@@ -85,39 +85,41 @@ if (!isset($_SESSION['jwt_token'])) {
         <!-- Main Profile Content (hidden until data loads) -->
         <div id="profile-content" class="hidden">
 
-            <!-- Header -->
-            <div class="flex flex-col sm:flex-row justify-between items-start gap-6 mb-10 fade-up">
-                <div class="flex items-center gap-5">
-                    <div id="user-avatar" class="w-20 h-20 rounded-full bg-gray-100 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden shrink-0"></div>
-                    <div>
+            <!-- Header - Responsive -->
+            <div class="flex flex-col xl:flex-row justify-between items-start gap-8 mb-10 fade-up">
+                <div class="flex items-center gap-5 w-full xl:w-auto">
+                    <div id="user-avatar" class="w-16 h-16 sm:w-20 sm:h-20 rounded-full bg-gray-100 border-4 border-white shadow-lg flex items-center justify-center overflow-hidden shrink-0"></div>
+                    <div class="min-w-0">
                         <div class="flex flex-wrap items-center gap-2 mb-1.5">
-                            <h1 class="text-[26px] font-bold text-gray-900" id="header-name"></h1>
-                            <span id="role-badge" class="px-3 py-1 rounded-full text-[11px] font-bold uppercase tracking-wider"></span>
-                            <span id="kyc-badge" class="px-3 py-1 rounded-full text-[11px] font-bold hidden"></span>
-                            <span id="suspended-badge" class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-[11px] font-bold hidden">⛔ Suspended</span>
+                            <h1 class="text-[22px] sm:text-[26px] font-bold text-gray-900 truncate" id="header-name"></h1>
+                            <div class="flex gap-2">
+                                <span id="role-badge" class="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold uppercase tracking-wider"></span>
+                                <span id="kyc-badge" class="px-3 py-1 rounded-full text-[10px] sm:text-[11px] font-bold hidden"></span>
+                                <span id="suspended-badge" class="px-3 py-1 bg-red-100 text-red-600 rounded-full text-[10px] sm:text-[11px] font-bold hidden">⛔ Suspended</span>
+                            </div>
                         </div>
-                        <div class="text-[13px] text-gray-400 flex flex-wrap items-center gap-x-3 gap-y-1">
-                            <span class="flex items-center gap-1"><i class="bi bi-envelope"></i> <span id="header-email"></span></span>
-                            <span id="header-phone" class="flex items-center gap-1 hidden"><i class="bi bi-telephone"></i> <span id="phone-val"></span></span>
-                            <span class="flex items-center gap-1"><i class="bi bi-calendar3"></i> Joined <span id="header-joined"></span></span>
+                        <div class="text-[12px] sm:text-[13px] text-gray-400 flex flex-wrap items-center gap-x-4 gap-y-1">
+                            <span class="flex items-center gap-1.5"><i class="bi bi-envelope"></i> <span id="header-email" class="truncate"></span></span>
+                            <span id="header-phone" class="flex items-center gap-1.5 hidden"><i class="bi bi-telephone"></i> <span id="phone-val"></span></span>
+                            <span class="flex items-center gap-1.5"><i class="bi bi-calendar3"></i> Joined <span id="header-joined"></span></span>
                         </div>
                     </div>
                 </div>
-                <div class="flex items-center gap-3 shrink-0">
+                <div class="flex items-center gap-3 w-full sm:w-auto mt-2 xl:mt-0">
                     <button id="suspend-toggle-btn" onclick="openSuspendModal()"
-                            class="px-5 py-2.5 border font-bold text-[13px] rounded-xl transition-all">
+                            class="flex-1 sm:flex-none justify-center px-6 py-3 border font-bold text-[13px] rounded-xl transition-all bg-white hover:bg-gray-50 whitespace-nowrap">
                         Suspend Account
                     </button>
-                    <a href="kyc.php" class="px-5 py-2.5 bg-[#005a92] text-white rounded-xl font-bold text-[13px] shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2">
+                    <a href="kyc.php" class="flex-1 sm:flex-none justify-center px-6 py-3 bg-[#005a92] text-white rounded-xl font-bold text-[13px] shadow-lg shadow-primary/20 hover:bg-primary/90 transition-all flex items-center gap-2 whitespace-nowrap">
                         <i class="bi bi-shield-check"></i> KYC Review
                     </a>
                 </div>
             </div>
 
-            <!-- Stats -->
-            <div class="grid grid-cols-2 md:grid-cols-3 gap-5 mb-8 fade-up" id="stats-grid"></div>
+            <!-- Stats - Responsive Grid -->
+            <div class="grid grid-cols-1 sm:grid-cols-2 xl:grid-cols-3 gap-5 mb-8 fade-up" id="stats-grid"></div>
 
-            <!-- Body Grid -->
+            <!-- Body Grid - Responsive Flex -->
             <div class="grid grid-cols-12 gap-8">
 
                 <!-- LEFT: 8 cols -->

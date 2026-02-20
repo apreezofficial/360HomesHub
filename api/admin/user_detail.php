@@ -32,10 +32,6 @@ try {
     if (!$user) throw new Exception("User not found");
 
     // 2. Stats
-    $listingsCount = (int)$pdo->prepare("SELECT COUNT(*) FROM properties WHERE host_id = ?")->execute([$userId]) 
-        ? $pdo->query("SELECT COUNT(*) FROM properties WHERE host_id = $userId")->fetchColumn() : 0;
-
-    // Use prepared properly
     $s = $pdo->prepare("SELECT COUNT(*) FROM properties WHERE host_id = ?");
     $s->execute([$userId]); $listingsCount = (int)$s->fetchColumn();
 
@@ -65,7 +61,7 @@ try {
                b.total_amount, b.nights, b.created_at,
                p.name AS property_name,
                p.city AS property_city, p.state AS property_state,
-               (SELECT pi.image_url FROM property_images pi WHERE pi.property_id = p.id ORDER BY pi.uploaded_at ASC LIMIT 1) AS property_image,
+               (SELECT pi.media_url FROM property_images pi WHERE pi.property_id = p.id ORDER BY pi.uploaded_at ASC LIMIT 1) AS property_image,
                hu.first_name AS host_first_name, hu.last_name AS host_last_name
         FROM bookings b
         LEFT JOIN properties p  ON b.property_id = p.id
@@ -80,7 +76,7 @@ try {
     // 5. Properties listed (for hosts)
     $s = $pdo->prepare("
         SELECT p.id, p.name, p.city, p.state, p.price, p.price_type, p.status, p.created_at,
-               (SELECT pi.image_url FROM property_images pi WHERE pi.property_id = p.id ORDER BY pi.uploaded_at ASC LIMIT 1) AS image
+               (SELECT pi.media_url FROM property_images pi WHERE pi.property_id = p.id ORDER BY pi.uploaded_at ASC LIMIT 1) AS image
         FROM properties p
         WHERE p.host_id = ?
         ORDER BY p.created_at DESC

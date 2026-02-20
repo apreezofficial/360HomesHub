@@ -49,58 +49,56 @@ if (!isset($_SESSION['jwt_token'])) {
 </head>
 <body class="bg-[#F9FAFB] min-h-screen font-outfit">
     <div class="flex min-h-screen">
-        <aside class="w-[260px] fixed h-full bg-white z-50"></aside>
+        <aside class="w-[280px] fixed h-full bg-white z-50 transition-transform lg:translate-x-0 -translate-x-full border-r border-gray-100"></aside>
 
-        <main class="flex-1 ml-[260px] min-h-screen p-8">
-            <!-- Top Nav -->
-            <div class="flex justify-between items-center mb-10">
-                <div class="text-[14px] text-gray-400">
+        <main class="flex-1 lg:ml-[280px] min-h-screen pt-24 lg:pt-8 px-4 sm:px-8 pb-12 transition-all">
+            <!-- Top Nav - Responsive -->
+            <div class="flex flex-col md:flex-row justify-between items-center gap-4 mb-10">
+                <div class="hidden lg:block text-[14px] text-gray-400">
                     Management / <span class="text-gray-900 font-medium">Bookings</span>
                 </div>
-                <div class="flex-1 max-w-[500px] mx-8">
-                    <div class="relative">
-                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400"></i>
+                <div class="w-full md:flex-1 md:max-w-[500px]">
+                    <div class="relative group">
+                        <i class="bi bi-search absolute left-4 top-1/2 -translate-y-1/2 text-gray-400 group-focus-within:text-primary transition-colors"></i>
                         <input type="text" id="search-input" placeholder="Search for guest name, property or booking ID..." 
                                class="w-full bg-white border border-gray-100 rounded-xl py-3 pl-12 pr-4 text-[14px] focus:outline-none focus:ring-2 focus:ring-primary/5 shadow-sm transition-all">
                     </div>
                 </div>
-                <div class="flex items-center gap-4">
-                     <div class="w-10 h-10 rounded-full bg-white border border-gray-100 flex items-center justify-center cursor-pointer shadow-sm relative">
-                        <i class="bi bi-bell text-[18px] text-gray-400"></i>
-                        <span class="absolute top-2.5 right-2.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white"></span>
-                    </div>
-                </div>
+                <div class="lg:hidden text-[14px] text-gray-400 font-medium self-start md:self-center">Bookings</div>
             </div>
 
-            <div class="flex justify-between items-end mb-8">
+            <!-- Page Header - Responsive -->
+            <div class="flex flex-col xl:flex-row justify-between items-start xl:items-end gap-6 mb-8">
                 <div>
-                    <h1 class="text-[32px] font-bold text-gray-900 mb-2">Booking Management</h1>
-                    <p class="text-gray-400 text-[15px]">Manage all space reservations across the platform.</p>
+                    <h1 class="text-[28px] sm:text-[32px] font-bold text-[#001D3D] mb-2 font-outfit">Booking Management</h1>
+                    <p class="text-gray-400 text-[14px] sm:text-[15px]">Manage all space reservations across the platform.</p>
                 </div>
-                <div class="flex gap-2 bg-gray-100 p-1 rounded-xl">
-                    <button class="px-6 py-2.5 text-[13px] font-bold rounded-lg bg-white shadow-sm text-gray-900 filter-btn active" data-status="all">All bookings</button>
-                    <button class="px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn" data-status="confirmed">Confirmed</button>
-                    <button class="px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn" data-status="pending">Pending</button>
-                    <button class="px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn" data-status="cancelled">Cancelled</button>
+                <div class="flex flex-wrap gap-1 bg-gray-100 p-1 rounded-xl w-full xl:w-auto overflow-x-auto no-scrollbar">
+                    <button class="flex-1 xl:flex-none px-6 py-2.5 text-[12px] sm:text-[13px] font-bold rounded-lg bg-white shadow-sm text-gray-900 filter-btn active whitespace-nowrap" data-status="all">All bookings</button>
+                    <button class="flex-1 xl:flex-none px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn whitespace-nowrap" data-status="confirmed">Confirmed</button>
+                    <button class="flex-1 xl:flex-none px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn whitespace-nowrap" data-status="pending">Pending</button>
+                    <button class="flex-1 xl:flex-none px-6 py-2.5 text-[13px] font-bold text-gray-400 hover:text-gray-600 filter-btn whitespace-nowrap" data-status="cancelled">Cancelled</button>
                 </div>
             </div>
 
-            <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden">
-                <table class="w-full text-left">
-                    <thead>
-                        <tr class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 bg-gray-50/30">
-                            <th class="py-4 px-8">Property</th>
-                            <th class="py-4 px-8">Guest</th>
-                            <th class="py-4 px-8">Stay dates</th>
-                            <th class="py-4 px-8">Amount</th>
-                            <th class="py-4 px-8 text-center">Status</th>
-                            <th class="py-4 px-8 text-right">Action</th>
-                        </tr>
-                    </thead>
-                    <tbody id="bookings-table" class="divide-y divide-gray-50 text-[13px]">
-                        <!-- Loaded via JS -->
-                    </tbody>
-                </table>
+            <div class="bg-white rounded-[24px] border border-gray-100 shadow-sm overflow-hidden min-h-[500px]">
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left min-w-[1000px]">
+                        <thead>
+                            <tr class="text-[11px] font-bold text-gray-400 uppercase tracking-widest border-b border-gray-50 bg-gray-50/30">
+                                <th class="py-4 px-8">Property</th>
+                                <th class="py-4 px-8">Guest</th>
+                                <th class="py-4 px-8">Stay dates</th>
+                                <th class="py-4 px-8">Amount</th>
+                                <th class="py-4 px-8 text-center">Status</th>
+                                <th class="py-4 px-8 text-right">Action</th>
+                            </tr>
+                        </thead>
+                        <tbody id="bookings-table" class="divide-y divide-gray-50 text-[13px]">
+                            <!-- Loaded via JS -->
+                        </tbody>
+                    </table>
+                </div>
                 <div id="empty-state" class="hidden flex flex-col items-center justify-center py-32">
                      <div class="w-20 h-20 bg-gray-50 rounded-full flex items-center justify-center mb-6">
                         <i class="bi bi-calendar-x text-[32px] text-gray-200"></i>
@@ -282,16 +280,11 @@ if (!isset($_SESSION['jwt_token'])) {
 
         fetchBookings();
     </script>
-    <script src="js/sidebar.js"></script>
-</body>
-</html>
-
-    <script>
-        // Inject JWT token from session into localStorage for API calls
-        <?php if (isset($_SESSION['jwt_token'])): ?>
-            localStorage.setItem('jwt_token', '<?= $_SESSION['jwt_token'] ?>');
-        <?php endif; ?>
-    </script>
-    <script src="js/sidebar.js"></script>
+            <?php if (isset($_SESSION['jwt_token'])): ?>
+            <script>localStorage.setItem('jwt_token', '<?= $_SESSION['jwt_token'] ?>');</script>
+            <?php endif; ?>
+            <script src="js/sidebar.js"></script>
+        </main>
+    </div>
 </body>
 </html>

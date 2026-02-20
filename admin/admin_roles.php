@@ -102,13 +102,13 @@ if (!isset($_SESSION['jwt_token'])) {
                     <h3 class="text-xl font-bold text-gray-900 mb-2">New admin added</h3>
                     <p class="text-sm text-gray-500 mb-6 px-4 leading-relaxed">
                         You have added <span class="font-bold text-gray-900" id="new-admin-name">Alex Rivera</span> as an <span id="new-admin-role">operations admin</span>. 
-                        Admin access password has been sent to <a href="#" class="text-primary hover:underline" id="new-admin-email">alex@rivera.36homes.com</a>
+                        Admin access password has been sent to <a href="#" class="text-primary hover:underline" id="new-admin-email">alex@rivera.36homeshub.com</a>
                     </p>
                     
                     <div class="bg-gray-50 rounded-lg p-3 border border-dashed border-gray-200 mb-2 relative group text-left">
                          <p class="text-[10px] text-gray-400 font-medium mb-1 uppercase tracking-wider">Direct login link</p>
                          <div class="flex items-center justify-between">
-                            <span class="text-xs text-gray-600 truncate mr-2" id="login-link">https://admin.36homes.com/auth/login?invite=123</span>
+                            <span class="text-xs text-gray-600 truncate mr-2" id="login-link">https://admin.36homeshub.com/auth/login?invite=123</span>
                             <button onclick="copyLink()" class="text-gray-400 hover:text-gray-600">
                                 <i class="bi bi-clipboard"></i>
                             </button>
