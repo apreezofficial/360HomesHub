@@ -34,17 +34,33 @@ try {
         throw new Exception("You cannot suspend your own account");
     }
 
+    // ── TOGGLE individual control ─────────────────────────────
+    if ($action === 'toggle') {
+        $allowedFields = ['booking_disabled', 'message_disabled'];
+        $field = $data['field'] ?? null;
+        $value = isset($data['value']) ? (int)$data['value'] : 0;
+
+        if (!in_array($field, $allowedFields)) throw new Exception("Invalid field");
+
+        $update = $pdo->prepare("UPDATE users SET {$field} = ? WHERE id = ?");
+        $update->execute([$value, $userId]);
+
+        echo json_encode([
+            'success' => true,
+            'message' => ($field === 'booking_disabled' ? 'Booking access' : 'Messaging access') . ' ' . ($value ? 'disabled' : 'restored') . '.'
+        ]);
+        exit;
+    }
+
     if ($action === 'suspend') {
-        // Preserve current status in a temp column so we can restore on unsuspend
         $newStatus = 'suspended';
-        // Store pre-suspend status in a JSON note or just use booking_disabled as flag
         $update = $pdo->prepare("UPDATE users SET status = ?, booking_disabled = 1, message_disabled = 1 WHERE id = ?");
         $update->execute([$newStatus, $userId]);
     } else {
-        // Restore to verified if they had it, else no_kyc
+        // Restore to verified if they had approved KYC, else no_kyc
         $kycCheck = $pdo->prepare("SELECT COUNT(*) FROM kyc WHERE user_id = ? AND status = 'approved'");
         $kycCheck->execute([$userId]);
-        $isVerified = (int)$kycCheck->fetchColumn() > 0;
+        $isVerified    = (int)$kycCheck->fetchColumn() > 0;
         $restoreStatus = $isVerified ? 'verified' : 'no_kyc';
 
         $update = $pdo->prepare("UPDATE users SET status = ?, booking_disabled = 0, message_disabled = 0 WHERE id = ?");
@@ -52,19 +68,20 @@ try {
         $newStatus = $restoreStatus;
     }
 
-
     // Audit log
     $targetName = "{$target['first_name']} {$target['last_name']}";
-    $log = $pdo->prepare("INSERT INTO audit_logs (admin_id, action, details) VALUES (?, ?, ?)");
-    $log->execute([
-        $admin['user_id'],
-        ($action === 'unsuspend' ? "Unsuspended" : "Suspended") . " user - $targetName",
-        "User #$userId status changed to $newStatus"
-    ]);
+    try {
+        $log = $pdo->prepare("INSERT INTO audit_logs (admin_id, action, details) VALUES (?, ?, ?)");
+        $log->execute([
+            $admin['user_id'],
+            ($action === 'unsuspend' ? "Unsuspended" : "Suspended") . " user - $targetName",
+            "User #$userId status changed to $newStatus"
+        ]);
+    } catch (\Throwable $e) { /* audit_logs table may not exist yet – don't fail the action */ }
 
     echo json_encode([
-        'success' => true,
-        'message' => "User has been " . ($action === 'unsuspend' ? 'unsuspended' : 'suspended') . " successfully.",
+        'success'    => true,
+        'message'    => "User has been " . ($action === 'unsuspend' ? 'unsuspended' : 'suspended') . " successfully.",
         'new_status' => $newStatus
     ]);
 
