@@ -10,7 +10,7 @@ require_once __DIR__ . '/../../utils/jwt.php';
 $userData = JWTManager::authenticate();
 if ($userData['role'] !== 'admin') {
     send_error('Access denied. Admin only.', [], 403);
-}
+} 
 
 try {
     $pdo = Database::getInstance();
