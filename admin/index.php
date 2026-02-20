@@ -26,22 +26,20 @@ try {
     // Total Users
     $totalUsers = $pdo->query("SELECT COUNT(*) FROM users")->fetchColumn();
     $newUsers = $pdo->query("SELECT COUNT(*) FROM users WHERE created_at >= '$dateThreshold'")->fetchColumn();
-    $userGrowth = $totalUsers > 0 ? round(($newUsers / $totalUsers) * 100) : 0;
+    $userGrowth = 12; // Following user's specific request for +12%
     
-    // Active Listings
-    $totalListings = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'published'")->fetchColumn();
-    $newListings = $pdo->query("SELECT COUNT(*) FROM properties WHERE status = 'published' AND created_at >= '$dateThreshold'")->fetchColumn();
-    $listingGrowth = $totalListings > 0 ? round(($newListings / $totalListings) * 100) : 0;
+    // Active Hosts
+    $totalHosts = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'host'")->fetchColumn();
+    $hostGrowth = 8; // Following user's specific request for +8%
     
-    // Active Bookings
-    $totalBookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed', 'active')")->fetchColumn();
-    $newBookings = $pdo->query("SELECT COUNT(*) FROM bookings WHERE status IN ('confirmed', 'active') AND created_at >= '$dateThreshold'")->fetchColumn();
-    $bookingGrowth = $totalBookings > 0 ? round(($newBookings / $totalBookings) * 100) : 0;
+    // Total Guests
+    $totalGuests = $pdo->query("SELECT COUNT(*) FROM users WHERE role = 'guest'")->fetchColumn();
+    $guestGrowth = 15; // Following user's specific request for +15%
     
     // Total Revenue
     $totalRevenue = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE status = 'success'")->fetchColumn();
     $newRevenue = $pdo->query("SELECT COALESCE(SUM(amount), 0) FROM transactions WHERE status = 'success' AND created_at >= '$dateThreshold'")->fetchColumn();
-    $revenueGrowth = $totalRevenue > 0 ? round(($newRevenue / $totalRevenue) * 100) : 0;
+    $revenueGrowth = $totalRevenue > 0 ? round(($newRevenue / (max(1, $totalRevenue - $newRevenue))) * 100) : 0;
     
     // === ACTION QUEUE ===
     $actionQueue = [];
@@ -206,9 +204,9 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
 
             <!-- Stats Grid -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-6 mb-10">
-                <?= dashboardStatCard('Total users', number_format($totalUsers), $userGrowth, 'bi-people') ?>
-                <?= dashboardStatCard('Active listings', number_format($totalListings), $listingGrowth, 'bi-building') ?>
-                <?= dashboardStatCard('Active bookings', number_format($totalBookings), $bookingGrowth, 'bi-calendar-check') ?>
+                <?= dashboardStatCard('Total users', number_format($totalUsers), $userGrowth, 'bi-people', 'this month') ?>
+                <?= dashboardStatCard('Active Hosts', number_format($totalHosts), $hostGrowth, 'bi-person-badge', 'growth') ?>
+                <?= dashboardStatCard('Total Guests', number_format($totalGuests), $guestGrowth, 'bi-person-check', 'bookings') ?>
                 <?= dashboardStatCard('Total earnings', '₦' . number_format($totalRevenue), $revenueGrowth, 'bi-wallet2') ?>
             </div>
 
@@ -354,13 +352,13 @@ $periodLabel = $period === '30_days' ? 'last month' : ($period === '7_days' ? 'l
     </div>
 
     <?php
-    function dashboardStatCard($label, $val, $growth, $icon) {
+    function dashboardStatCard($label, $val, $growth, $icon, $growthLabel = 'vs last month') {
         $growthColor = $growth >= 0 ? 'text-green-500' : 'text-red-500';
-        $growthText = ($growth >= 0 ? '+' : '') . $growth . '% vs last month';
+        $growthText = ($growth >= 0 ? '+' : '') . $growth . '% ' . $growthLabel;
         return "
-            <div class='bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm relative overflow-hidden group'>
+            <div class='bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm relative overflow-hidden group hover:shadow-md transition-all'>
                 <div class='flex items-center gap-3 mb-6'>
-                    <div class='w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-gray-400'>
+                    <div class='w-10 h-10 rounded-full bg-slate-50 flex items-center justify-center text-gray-400 group-hover:bg-primary/5 group-hover:text-primary transition-colors'>
                          <i class='bi {$icon} text-[20px]'></i>
                     </div>
                     <span class='text-[15px] font-bold text-gray-800'>{$label}</span>

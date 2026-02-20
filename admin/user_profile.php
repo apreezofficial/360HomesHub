@@ -247,7 +247,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     // Role Badge
                     const rb = document.getElementById('role-badge');
                     rb.textContent = u.role;
-                    rb.className = `px-3 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider \${u.role === 'host' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`;
+                    rb.className = `px-3 py-1 rounded-full text-[12px] font-bold uppercase tracking-wider ${u.role === 'host' ? 'bg-orange-50 text-orange-500' : 'bg-blue-50 text-blue-500'}`;
 
                     if (u.is_verified == 1) document.getElementById('verified-badge-top').classList.remove('hidden');
 
@@ -255,15 +255,15 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                     const statsGrid = document.getElementById('stats-grid');
                     if (u.role === 'host') {
                         statsGrid.innerHTML = `
-                            \${statCard('Host Revenue', '₦' + parseFloat(stats.total_earnings || 0).toLocaleString(), '+12.5% increment', 'bi-wallet2')}
-                            \${statCard('Public Listings', stats.listings, 'Total active properties', 'bi-building')}
-                            \${statCard('Bookings Gained', stats.bookings_host, 'Successful check-ins', 'bi-calendar-check')}
+                            ${statCard('Host Revenue', '₦' + parseFloat(stats.total_earnings || 0).toLocaleString(), '+12.5% increment', 'bi-wallet2')}
+                            ${statCard('Public Listings', stats.listings, 'Total active properties', 'bi-building')}
+                            ${statCard('Bookings Gained', stats.bookings_host, 'Successful check-ins', 'bi-calendar-check')}
                         `;
                     } else {
                         statsGrid.innerHTML = `
-                            \${statCard('Total Bookings', stats.bookings_guest, 'Total stay history', 'bi-house')}
-                            \${statCard('Wallet Spending', '₦' + parseFloat(stats.total_spent || 0).toLocaleString(), 'Average NGN20k/stay', 'bi-wallet2')}
-                            \${statCard('Engagement Status', 'Active', 'Last seen: ' + (stats.last_booking_date ? new Date(stats.last_booking_date).toLocaleDateString() : 'Never'), 'bi-person-check')}
+                            ${statCard('Total Bookings', stats.bookings_guest, 'Total stay history', 'bi-house')}
+                            ${statCard('Wallet Spending', '₦' + parseFloat(stats.total_spent || 0).toLocaleString(), 'Average NGN20k/stay', 'bi-wallet2')}
+                            ${statCard('Engagement Status', 'Active', 'Last seen: ' + (stats.last_booking_date ? new Date(stats.last_booking_date).toLocaleDateString() : 'Never'), 'bi-person-check')}
                         `;
                     }
 
@@ -277,17 +277,17 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             const tr = document.createElement('tr');
                             tr.className = 'border-b border-gray-50 hover:bg-gray-50/30 transition-all';
                             tr.innerHTML = `
-                                <td class="py-5 font-bold text-gray-900 group-hover:text-primary capitalize">\${k.identity_type || 'Identity Card'}</td>
+                                <td class="py-5 font-bold text-gray-900 group-hover:text-primary capitalize">${k.identity_type || 'Identity Card'}</td>
                                 <td class="py-5 text-center">
-                                    <span class="px-3 py-1.5 rounded-full text-[11px] font-bold uppercase \${k.status === 'approved' ? 'bg-green-50 text-green-500' : 'bg-yellow-50 text-yellow-500'}">\${k.status}</span>
+                                    <span class="px-3 py-1.5 rounded-full text-[11px] font-bold uppercase ${k.status === 'approved' ? 'bg-green-50 text-green-500' : 'bg-yellow-50 text-yellow-500'}">${k.status}</span>
                                 </td>
                                 <td class="py-5 text-gray-400 font-medium">
-                                    \${new Date(k.created_at).toLocaleDateString()}
+                                    ${new Date(k.created_at).toLocaleDateString()}
                                 </td>
                                 <td class="py-5 text-right">
                                     <div class="flex justify-end gap-2">
-                                        <a href="../\${k.id_front}" target="_blank" class="w-10 h-7 rounded bg-gray-100 overflow-hidden border border-gray-100 hover:ring-2 ring-primary transition-all"><img src="../\${k.id_front}" class="w-full h-full object-cover"></a>
-                                        <a href="../\${k.id_back}" target="_blank" class="w-10 h-7 rounded bg-gray-100 overflow-hidden border border-gray-100 hover:ring-2 ring-primary transition-all"><img src="../\${k.id_back}" class="w-full h-full object-cover"></a>
+                                        <a href="../${k.id_front}" target="_blank" class="w-10 h-7 rounded bg-gray-100 overflow-hidden border border-gray-100 hover:ring-2 ring-primary transition-all"><img src="../${k.id_front}" class="w-full h-full object-cover"></a>
+                                        <a href="../${k.id_back}" target="_blank" class="w-10 h-7 rounded bg-gray-100 overflow-hidden border border-gray-100 hover:ring-2 ring-primary transition-all"><img src="../${k.id_back}" class="w-full h-full object-cover"></a>
                                     </div>
                                 </td>
                             `;
@@ -316,21 +316,21 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                                 <td class="py-5 px-8">
                                     <div class="flex items-center gap-3">
                                         <div class="w-10 h-10 rounded-xl bg-gray-100 overflow-hidden shrink-0 border border-gray-100 shadow-sm">
-                                            <img src="../\${b.property_image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/100'">
+                                            <img src="../${b.property_image}" class="w-full h-full object-cover group-hover:scale-110 transition-transform duration-500" onerror="this.src='https://via.placeholder.com/100'">
                                         </div>
                                         <div>
-                                            <div class="font-bold text-gray-900 group-hover:text-primary transition-colors">\${b.property_name || 'Listing Instance'}</div>
-                                            <div class="text-[11px] text-gray-400 mt-0.5 font-bold uppercase">BK-\${b.id.toString().padStart(5, '0')}</div>
+                                            <div class="font-bold text-gray-900 group-hover:text-primary transition-colors">${b.property_name || 'Listing Instance'}</div>
+                                            <div class="text-[11px] text-gray-400 mt-0.5 font-bold uppercase">BK-${b.id.toString().padStart(5, '0')}</div>
                                         </div>
                                     </div>
                                 </td>
                                 <td class="py-5 px-8">
-                                    <div class="text-gray-900 font-bold">\${new Date(b.check_in).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} - \${new Date(b.check_out).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
+                                    <div class="text-gray-900 font-bold">${new Date(b.check_in).toLocaleDateString(undefined, { day: 'numeric', month: 'short' })} - ${new Date(b.check_out).toLocaleDateString(undefined, { day: 'numeric', month: 'short', year: 'numeric' })}</div>
                                     <div class="text-[11px] text-gray-400">Total duration stay</div>
                                 </td>
-                                <td class="py-5 px-8 font-bold text-gray-900 text-center">₦\${parseFloat(b.total_amount).toLocaleString()}</td>
+                                <td class="py-5 px-8 font-bold text-gray-900 text-center">₦${parseFloat(b.total_amount).toLocaleString()}</td>
                                 <td class="py-5 px-8 text-center uppercase">
-                                    <span class="px-3 py-1.5 rounded-full text-[11px] font-bold bg-\${statusColor}-50 text-\${statusColor}-500">\${b.status}</span>
+                                    <span class="px-3 py-1.5 rounded-full text-[11px] font-bold bg-${statusColor}-50 text-${statusColor}-500">${b.status}</span>
                                 </td>
                                 <td class="py-5 px-8 text-right">
                                     <button class="p-2 text-gray-300 hover:text-gray-900"><i class="bi bi-three-dots-vertical"></i></button>
@@ -339,7 +339,7 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                             historyTbody.appendChild(tr);
                         });
                     }
-                    document.getElementById('pagination-info').textContent = `Showing \${bookingHistory.length} activity logs`;
+                    document.getElementById('pagination-info').textContent = `Showing ${bookingHistory.length} activity logs`;
                 }
 
             } catch (err) {
@@ -352,12 +352,12 @@ if (!isset($_SESSION['user_id']) || $_SESSION['role'] !== 'admin') {
                 <div class="bg-white p-8 rounded-[24px] border border-gray-100 shadow-sm relative overflow-hidden group">
                     <div class="flex items-center gap-3 mb-6">
                         <div class="w-10 h-10 rounded-xl bg-gray-50 flex items-center justify-center text-gray-400 group-hover:bg-primary/5 group-hover:text-primary transition-all">
-                             <i class="bi \${icon} text-[20px]"></i>
+                             <i class="bi ${icon} text-[20px]"></i>
                         </div>
-                        <span class="text-[12px] font-bold text-gray-400 uppercase tracking-widest">\${label}</span>
+                        <span class="text-[12px] font-bold text-gray-400 uppercase tracking-widest">${label}</span>
                     </div>
-                    <div class="text-[32px] font-bold text-gray-900 mb-1">\${val}</div>
-                    \${sub ? \`<div class="text-[13px] font-bold text-green-500 flex items-center gap-1"><i class="bi bi-graph-up-arrow"></i> \${sub}</div>\` : ''}
+                    <div class="text-[32px] font-bold text-gray-900 mb-1">${val}</div>
+                    ${sub ? `<div class="text-[13px] font-bold text-green-500 flex items-center gap-1"><i class="bi bi-graph-up-arrow"></i> ${sub}</div>` : ''}
                 </div>
             `;
         }

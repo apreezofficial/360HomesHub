@@ -25,7 +25,7 @@ class PaystackService {
 
         $response = curl_exec($ch);
         $err = curl_error($ch);
-        curl_close($ch);
+        // curl_close($ch);
 
         if ($err) {
             return null;
@@ -48,7 +48,7 @@ class PaystackService {
 
         $response = curl_exec($ch);
         $err = curl_error($ch);
-        curl_close($ch);
+        // curl_close($ch);
 
         if ($err) {
             return null;

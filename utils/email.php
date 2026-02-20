@@ -40,12 +40,12 @@ function send_email($to, $from = null, $subject = '', $html = '') {
 
     if (curl_errno($ch)) {
         $curl_error = curl_error($ch);
-        curl_close($ch);
+        // curl_close($ch); // Deprecated in PHP 8.0+
         $err = 'Resend API cURL Error: ' . $curl_error;
         error_log($err);
         return $err;
     }
-    curl_close($ch);
+    // curl_close($ch); // Deprecated in PHP 8.0+
 
     if ($http_code >= 200 && $http_code < 300) {
         return true;

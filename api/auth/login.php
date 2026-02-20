@@ -63,6 +63,9 @@ $jwtData = [
 ];
 $token = JWTManager::generateToken($jwtData);
 
+// Stamp last_login
+$pdo->prepare("UPDATE users SET last_login = NOW() WHERE id = ?")->execute([$user['id']]);
+
 // Log successful login
 ActivityLogger::logUser(
     $user['id'],

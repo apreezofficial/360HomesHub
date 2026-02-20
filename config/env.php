@@ -7,7 +7,7 @@ define('ENV_LOADED', true);
 
 // Database configuration
 define('DB_HOST', 'localhost');
-define('DB_NAME', '360homesub');
+define('DB_NAME', '36homeshub');
 define('DB_USER', 'root');
 define('DB_PASS', '');
 

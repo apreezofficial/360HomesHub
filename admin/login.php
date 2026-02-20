@@ -278,6 +278,11 @@ if (isset($_SESSION['user_id']) && isset($_SESSION['role']) && $_SESSION['role']
                 const data = await res.json();
 
                 if (data.success) {
+                    if (data.data && data.data.token) {
+                        localStorage.setItem('jwt_token', data.data.token);
+                        window.location.href = 'index.php';
+                        return;
+                    }
                     userEmail = email;
                     document.getElementById('otp-email-display').textContent = email;
                     loginView.classList.add('hidden');
